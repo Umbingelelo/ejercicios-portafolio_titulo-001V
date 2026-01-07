@@ -1,6 +1,6 @@
 # Guía Paso a Paso: API REST de Donantes con Express (Node.js)
 
-## 🎯 Objetivo
+## Objetivo
 
 Construir una **API REST con Express** que permita:
 
@@ -13,7 +13,7 @@ Construir una **API REST con Express** que permita:
 
 ---
 
-## 🧰 Requisitos
+## Requisitos
 
 - Node.js LTS instalado  
 - Terminal  
@@ -22,7 +22,7 @@ Construir una **API REST con Express** que permita:
 
 ---
 
-## 1️⃣ Crear proyecto desde cero
+## Crear proyecto desde cero
 
 ### 1.1 Crear carpeta e iniciar npm
 
@@ -52,7 +52,7 @@ touch src/data/donantes.json
 
 ---
 
-## 2️⃣ Crear el archivo JSON inicial
+## Crear el archivo JSON inicial
 
 En `src/data/donantes.json` pega:
 
@@ -68,7 +68,7 @@ En `src/data/donantes.json` pega:
 
 ---
 
-## 3️⃣ Configurar scripts de ejecución
+## Configurar scripts de ejecución
 
 En `package.json` agrega:
 
@@ -83,7 +83,7 @@ En `package.json` agrega:
 
 ---
 
-## 4️⃣ Crear servidor Express
+## Crear servidor Express
 
 En `src/index.js`:
 
@@ -113,7 +113,7 @@ app.listen(PORT, () => {
 
 ---
 
-## 5️⃣ Capa de servicio
+## Capa de servicio
 
 Archivo `src/services/donantes.service.js`:
 
@@ -163,7 +163,7 @@ module.exports = { readDonantes, findByRut, addDonante, deleteByRut };
 
 ---
 
-## 6️⃣ Rutas REST
+## Rutas REST
 
 Archivo `src/routes/donantes.routes.js`:
 
@@ -207,7 +207,7 @@ module.exports = router;
 
 ---
 
-## 7️⃣ Levantar la API
+## Levantar la API
 
 ```bash
 npm run dev
