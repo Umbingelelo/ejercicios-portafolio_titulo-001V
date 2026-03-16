@@ -123,10 +123,12 @@ npm install -D nodemon
 
 ```powershell
 mkdir src, src\routes, src\services, src\data
-ni src\index.js
-ni src\routes\donantes.routes.js
-ni src\services\donantes.service.js
-ni src\data\donantes.json
+
+New-Item src\index.js -ItemType File
+New-Item src\routes\donantes.routes.js -ItemType File
+New-Item src\services\donantes.service.js -ItemType File
+New-Item src\data\donantes.json -ItemType File
+
 code .
 ```
 
