@@ -1,165 +1,120 @@
-# Guía y Laboratorio: Patrones de Diseño, Arquitectura y Despliegue para tu Proyecto
+# Guía y Laboratorio: Patrones Esenciales de Software para tu Proyecto de Portafolio
 
 ## Datos generales
 
 **Asignatura:** TPY1101 – Taller Aplicado de Programación
 **Duración estimada del laboratorio:** 1 hora 30 minutos
 **Modalidad:** Individual o en equipos del proyecto de portafolio
-**Tipo de material:** Guía de referencia exhaustiva + actividad práctica
-**Stack de referencia para los ejemplos:** React (frontend) y Node.js + Express (backend)
-**Prerequisitos:** Haber definido la problemática, el alcance y el tipo de aplicación (web, móvil, API, dashboard) del proyecto de portafolio.
+**Stack de referencia:** React (frontend) y Node.js + Express (backend)
+**Audiencia:** estudiantes desarrollando el proyecto de portafolio 2026-01
+**Prerequisitos:** haber entregado la EP1 (contexto, problema, objetivos, stack tentativo).
 
 ---
 
-## 0. Cómo usar este documento
+## 0. Cómo está organizado este documento
 
-Este material tiene dos partes claramente separadas:
+Este material está pensado como **una guía que podrás volver a consultar durante todo el semestre**, no como un listado enciclopédico. Por eso se limita a los patrones más usados en la industria y en los proyectos de la asignatura.
 
-1. **Parte A – Guía de referencia exhaustiva:** contenido teórico con ejemplos extensos en **React (frontend)** y **Node.js (backend)**. Incluye patrones de diseño, estructuras de carpetas recomendadas, arquitecturas con múltiples diagramas, stacks tecnológicos y plataformas cloud gratuitas.
-2. **Parte B – Actividad de 90 minutos:** ejercicio práctico para que cada equipo seleccione, justifique y documente el patrón, la arquitectura y la plataforma de despliegue de su proyecto.
+**Parte A – Fundamentos:**
+- Por qué existen los patrones (teoría).
+- **4 patrones esenciales de frontend** (con React).
+- **5 patrones esenciales de backend** (con Node.js).
+- **4 estilos de arquitectura** (con diagramas).
+- Estructura de carpetas recomendada.
+- Plataformas cloud gratuitas.
 
-La idea es que primero leas la Parte A con tu proyecto en mente y luego apliques lo aprendido en la Parte B.
+**Parte B – Recomendación específica para cada grupo del curso 2026-01:**
+- Grupo 1 (MapacheSecure), Grupo 2 (Deckora), Grupo 3 (NoLimits), Grupo 4 (40dB), Grupo 5 (Pop Study), Grupo 6 (Generador de Landing Pages con IA), Grupo 7 (AGENTE X).
+- Cada grupo recibe una tarjeta con los patrones que debe aplicar, el diagrama tentativo y las plataformas cloud sugeridas.
 
-> **Nota importante:** los ejemplos usan **React** y **Node.js** por ser el stack más común en los portafolios de la asignatura. Los patrones son válidos para cualquier otro stack (Angular, Vue, Django, FastAPI, Spring, .NET).
-
----
-
-# PARTE A – GUÍA DE REFERENCIA
-
----
-
-## 1. ¿Por qué importan los patrones y la arquitectura?
-
-Cuando un proyecto crece, el mayor costo no es escribir el código, sino **mantenerlo, extenderlo y corregirlo**. Un patrón de diseño es una solución reutilizable a un problema conocido, y una arquitectura es la forma en que se organizan los componentes de una aplicación.
-
-Elegir bien al inicio reduce el costo de:
-
-- agregar nuevas funcionalidades sin romper las existentes;
-- probar el sistema por partes;
-- cambiar la base de datos o el framework sin reescribir todo;
-- desplegar la aplicación en la nube;
-- que otro desarrollador entienda el proyecto rápidamente.
-
-En este curso, el proyecto de portafolio debe **justificar** por qué se eligió un patrón y una arquitectura. Esta guía te entrega los elementos para hacerlo.
+**Parte C – Actividad de 90 minutos:**
+- Ejercicio guiado para que cada equipo produzca un documento de arquitectura real para su proyecto.
 
 ---
 
-## 2. Patrones de diseño de frontend (ejemplos con React)
-
-### 2.1. MVC / MVP / MVVM
-
-Son tres variantes de una misma idea: separar la **vista**, el **modelo** y un intermediario que coordina ambos.
-
-| Patrón | Intermediario | Dónde se usa hoy |
-|---|---|---|
-| **MVC** (Model-View-Controller) | Controller | Django, Laravel, ASP.NET MVC, Ruby on Rails |
-| **MVP** (Model-View-Presenter) | Presenter | Android clásico, aplicaciones de escritorio |
-| **MVVM** (Model-View-ViewModel) | ViewModel | Angular, Vue, WPF, SwiftUI, Jetpack Compose |
-
-#### Ejemplo MVC en React (simulado con hooks)
-
-```jsx
-// Model: encapsula los datos y reglas del dominio
-const donantesModel = {
-  lista: [],
-  async cargar() {
-    const res = await fetch('/api/donantes');
-    this.lista = await res.json();
-    return this.lista;
-  },
-  agregar(d) { this.lista.push(d); }
-};
-
-// Controller: función que orquesta
-function useDonantesController() {
-  const [donantes, setDonantes] = useState([]);
-  const cargar = async () => setDonantes(await donantesModel.cargar());
-  const agregar = (d) => { donantesModel.agregar(d); setDonantes([...donantesModel.lista]); };
-  return { donantes, cargar, agregar };
-}
-
-// View: solo renderiza
-function DonantesView() {
-  const { donantes, cargar } = useDonantesController();
-  useEffect(() => { cargar(); }, []);
-  return <ul>{donantes.map(d => <li key={d.rut}>{d.nombre}</li>)}</ul>;
-}
-```
-
-#### Ejemplo MVVM en React (con estado observable mediante un custom hook)
-
-```jsx
-// ViewModel: expone el estado y las operaciones
-function useDonanteFormViewModel() {
-  const [nombre, setNombre] = useState('');
-  const [monto, setMonto] = useState(0);
-  const [errores, setErrores] = useState({});
-
-  const validar = () => {
-    const e = {};
-    if (nombre.length < 2) e.nombre = 'Muy corto';
-    if (monto < 0) e.monto = 'No negativo';
-    setErrores(e);
-    return Object.keys(e).length === 0;
-  };
-
-  const guardar = async () => {
-    if (!validar()) return false;
-    await fetch('/api/donantes', { method: 'POST', body: JSON.stringify({ nombre, monto }) });
-    return true;
-  };
-
-  return { nombre, setNombre, monto, setMonto, errores, guardar };
-}
-
-// View: solo enlaza con el ViewModel
-function DonanteForm() {
-  const vm = useDonanteFormViewModel();
-  return (
-    <form onSubmit={e => { e.preventDefault(); vm.guardar(); }}>
-      <input value={vm.nombre} onChange={e => vm.setNombre(e.target.value)} />
-      {vm.errores.nombre && <small>{vm.errores.nombre}</small>}
-      <input type="number" value={vm.monto} onChange={e => vm.setMonto(+e.target.value)} />
-      <button>Guardar</button>
-    </form>
-  );
-}
-```
-
-**Cuándo usarlo en React:** cuando el formulario o vista tiene mucha lógica (validaciones, transformaciones, cálculos). Extraer esa lógica a un "ViewModel" (custom hook) mantiene la vista limpia.
+# PARTE A – FUNDAMENTOS
 
 ---
 
-### 2.2. Component-Based Architecture
+## 1. ¿Por qué existen los patrones de diseño?
 
-La UI se construye como un árbol de **componentes reutilizables**. Es el patrón dominante en React, Vue, Svelte y Angular.
+### 1.1. Definición
 
-#### Ejemplo básico
+Un **patrón de diseño** es una solución reutilizable, probada y documentada a un **problema recurrente** en el desarrollo de software. No es una receta exacta ni un fragmento de código listo para copiar: es una **forma de organizar el código** que la industria ha validado después de décadas de prueba y error.
+
+La referencia fundacional es el libro *Design Patterns: Elements of Reusable Object-Oriented Software* (1994), conocido como "GoF" (Gang of Four). Desde entonces el concepto se ha extendido a patrones arquitectónicos, patrones de frontend, patrones de backend, patrones de integración y otros.
+
+### 1.2. ¿Por qué importan en tu proyecto?
+
+Elegir un patrón adecuado reduce el costo de:
+
+1. **agregar funcionalidades** sin romper lo existente;
+2. **probar el sistema** por partes;
+3. **cambiar una dependencia** (la base de datos, un proveedor de email, un gateway de pago) sin reescribir todo;
+4. **incorporar a un compañero nuevo** al proyecto, porque el código sigue una convención conocida;
+5. **defender las decisiones técnicas** en la presentación final del portafolio.
+
+### 1.3. ¿Cuándo NO usar un patrón?
+
+El peor error en proyectos de estudiantes es **aplicar patrones sofisticados a problemas simples**. Un CRUD de 3 tablas no necesita microservicios ni Clean Architecture. Antes de elegir un patrón, pregúntate:
+
+- ¿Qué problema concreto me resuelve?
+- ¿Estoy agregando complejidad a cambio de un beneficio real?
+- ¿Mis compañeros lo van a entender?
+
+Si no puedes responder las tres, probablemente no necesitas ese patrón.
+
+---
+
+## 2. Patrones esenciales de Frontend (React)
+
+En esta sección se presentan los **cuatro patrones más importantes** de React. Con estos cuatro puedes construir el 90 % de los proyectos web del portafolio.
+
+---
+
+### 2.1. Componentes como unidad básica (Component-Based Architecture)
+
+#### ¿Qué es?
+
+Es la **idea fundacional de React, Vue, Angular y Svelte**: la interfaz se construye como un árbol de piezas pequeñas e independientes llamadas componentes. Cada componente es una función que recibe datos (`props`) y devuelve una porción de UI.
+
+#### ¿Qué problema resuelve?
+
+Antes de los frameworks modernos, los sitios web se construían con bloques gigantes de HTML y JavaScript acoplados. Cualquier cambio afectaba todo. El enfoque en componentes permite:
+
+- **reutilizar** la misma pieza (un botón, un input, una tarjeta) en muchas pantallas;
+- **aislar** el comportamiento: un bug en la tarjeta de donante no afecta a la barra de navegación;
+- **probar por partes**, con herramientas como Jest o React Testing Library;
+- **documentar visualmente** con Storybook.
+
+#### Principios
+
+1. **Responsabilidad única:** cada componente debe tener una sola razón para cambiar.
+2. **Composición sobre herencia:** es preferible meter componentes dentro de otros (`<Tarjeta>{hijo}</Tarjeta>`) que heredar clases.
+3. **Props para arriba, eventos para abajo:** los datos fluyen del padre al hijo; los eventos suben por callbacks.
+4. **Estado lo más local posible:** solo elevar estado cuando dos componentes hermanos lo necesitan.
+
+#### Ejemplo mínimo
 
 ```jsx
 function Boton({ texto, variante = 'primario', onClick }) {
-  const clases = {
+  const estilos = {
     primario: 'bg-blue-600 text-white',
     peligro: 'bg-red-600 text-white',
     secundario: 'bg-gray-200 text-black'
   };
-  return <button className={`px-4 py-2 rounded ${clases[variante]}`} onClick={onClick}>{texto}</button>;
-}
-
-function App() {
   return (
-    <div>
-      <Boton texto="Guardar" variante="primario" onClick={() => {}} />
-      <Boton texto="Eliminar" variante="peligro" onClick={() => {}} />
-    </div>
+    <button className={`px-4 py-2 rounded ${estilos[variante]}`} onClick={onClick}>
+      {texto}
+    </button>
   );
 }
 ```
 
-#### Ejemplo de composición (mejor que herencia)
+#### Ejemplo de composición
 
 ```jsx
-function Tarjeta({ children, titulo }) {
+function Tarjeta({ titulo, children }) {
   return (
     <div className="border rounded p-4 shadow">
       <h3 className="font-bold">{titulo}</h3>
@@ -168,381 +123,171 @@ function Tarjeta({ children, titulo }) {
   );
 }
 
-function Dashboard() {
-  return (
-    <>
-      <Tarjeta titulo="Donantes">
-        <p>Total: 120</p>
-      </Tarjeta>
-      <Tarjeta titulo="Montos">
-        <BarChart data={...} />
-      </Tarjeta>
-    </>
-  );
-}
+// Uso: la tarjeta no sabe qué contiene, solo renderiza
+<Tarjeta titulo="Donantes activos">
+  <p>Total: 120</p>
+  <Boton texto="Ver listado" onClick={...} />
+</Tarjeta>
 ```
 
-#### Ejemplo de Compound Components
-
-Varios componentes que comparten estado implícito. Muy usado en librerías tipo Radix UI o Reach UI.
+#### Ejemplo con datos (donantes de una fundación)
 
 ```jsx
-const TabsContext = createContext();
-
-function Tabs({ children, defaultTab }) {
-  const [activo, setActivo] = useState(defaultTab);
-  return <TabsContext.Provider value={{ activo, setActivo }}>{children}</TabsContext.Provider>;
-}
-
-function Tab({ id, children }) {
-  const { activo, setActivo } = useContext(TabsContext);
+function DonanteItem({ donante, onEliminar }) {
   return (
-    <button className={activo === id ? 'font-bold underline' : ''} onClick={() => setActivo(id)}>
-      {children}
-    </button>
+    <li className="flex justify-between border-b py-2">
+      <span>{donante.nombre} — ${donante.monto.toLocaleString('es-CL')}</span>
+      <Boton texto="Eliminar" variante="peligro" onClick={() => onEliminar(donante.rut)} />
+    </li>
   );
 }
 
-function TabPanel({ id, children }) {
-  const { activo } = useContext(TabsContext);
-  return activo === id ? <div>{children}</div> : null;
-}
-
-// Uso:
-<Tabs defaultTab="resumen">
-  <Tab id="resumen">Resumen</Tab>
-  <Tab id="detalle">Detalle</Tab>
-  <TabPanel id="resumen"><Resumen /></TabPanel>
-  <TabPanel id="detalle"><Detalle /></TabPanel>
-</Tabs>
-```
-
-#### Ejemplo de Render Props
-
-```jsx
-function Fetcher({ url, children }) {
-  const [data, setData] = useState(null);
-  const [cargando, setCargando] = useState(true);
-  useEffect(() => {
-    fetch(url).then(r => r.json()).then(d => { setData(d); setCargando(false); });
-  }, [url]);
-  return children({ data, cargando });
-}
-
-// Uso:
-<Fetcher url="/api/donantes">
-  {({ data, cargando }) => cargando ? <p>Cargando…</p> : <ListaDonantes donantes={data} />}
-</Fetcher>
-```
-
-#### Ejemplo de Higher-Order Component (HOC)
-
-```jsx
-function withAuth(Componente) {
-  return function Protegido(props) {
-    const { usuario } = useAuth();
-    if (!usuario) return <Navigate to="/login" />;
-    return <Componente {...props} usuario={usuario} />;
-  };
-}
-
-const DashboardProtegido = withAuth(Dashboard);
-```
-
-**Cuándo elegirlo:** es casi obligatorio en React. Solo debes decidir **qué variante** (composición, compound, render props, HOC) encaja mejor con tu caso.
-
----
-
-### 2.3. Container / Presentational (Smart / Dumb)
-
-Separa los componentes en dos tipos:
-
-- **Container (Smart):** conoce la lógica, pide datos, mantiene estado.
-- **Presentational (Dumb):** solo recibe props y renderiza.
-
-#### Ejemplo completo
-
-```jsx
-// ────── Presentational: sin lógica, fácil de testear y Storybookear ──────
-function ListaDonantesView({ donantes, onEliminar, cargando }) {
-  if (cargando) return <p>Cargando…</p>;
-  if (!donantes.length) return <p>No hay donantes.</p>;
+function ListaDonantes({ donantes, onEliminar }) {
+  if (donantes.length === 0) return <p>Sin donantes registrados.</p>;
   return (
     <ul>
       {donantes.map(d => (
-        <li key={d.rut}>
-          {d.nombre} – ${d.monto}
-          <button onClick={() => onEliminar(d.rut)}>Eliminar</button>
-        </li>
+        <DonanteItem key={d.rut} donante={d} onEliminar={onEliminar} />
       ))}
     </ul>
   );
 }
+```
 
-// ────── Container: conecta con la API ──────
-function ListaDonantesContainer() {
+#### ¿Cuándo usarlo?
+
+**Siempre.** Es el patrón base de React. La pregunta no es si usarlo, sino cómo organizar tus componentes (ver patrón siguiente).
+
+#### Pros
+
+- Código reutilizable y testeable.
+- Comunidad enorme, mucha documentación.
+- Facilita trabajo en equipo (cada persona puede desarrollar un componente).
+
+#### Contras
+
+- Árboles de componentes muy profundos pueden ser difíciles de seguir.
+- Es fácil caer en "prop drilling" (pasar props por 5 niveles); se soluciona con Context o state management (sección 2.3).
+
+---
+
+### 2.2. Custom Hooks + Separación de lógica y presentación
+
+#### ¿Qué es?
+
+Un **custom hook** es una función de JavaScript que usa otros hooks de React (`useState`, `useEffect`, etc.) y encapsula **lógica reutilizable**. Por convención empiezan con `use` (ej: `useAuth`, `useFetch`, `useDonantes`).
+
+La **separación de lógica y presentación** significa mover la lógica (fetch de datos, validaciones, transformaciones) a hooks, dejando que los componentes solo rendericen UI.
+
+#### ¿Qué problema resuelve?
+
+En React es muy fácil mezclar lógica y UI en el mismo componente, lo que produce:
+
+- componentes gigantes (200+ líneas) imposibles de entender;
+- lógica duplicada en distintas pantallas;
+- imposibilidad de testear la lógica sin renderizar la UI;
+- dificultad para ver "qué hace" un componente de un vistazo.
+
+Extraer la lógica a un hook convierte el componente en una pieza visual simple.
+
+#### Principios
+
+1. Si usas el mismo `useEffect` en dos componentes, extráelo a un hook.
+2. El componente debe leerse casi como un diseño: qué elementos hay y cómo se conectan.
+3. La regla de oro: un componente que tiene más `useEffect` que JSX probablemente necesita un hook.
+
+#### Ejemplo 1: hook genérico `useFetch`
+
+```jsx
+// hooks/useFetch.js
+import { useState, useEffect } from 'react';
+
+export function useFetch(url) {
+  const [data, setData] = useState(null);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let cancelado = false;
+    setCargando(true);
+
+    fetch(url)
+      .then(r => r.json())
+      .then(d => { if (!cancelado) setData(d); })
+      .catch(e => { if (!cancelado) setError(e); })
+      .finally(() => { if (!cancelado) setCargando(false); });
+
+    return () => { cancelado = true; };
+  }, [url]);
+
+  return { data, cargando, error };
+}
+```
+
+#### Ejemplo 2: hook específico `useDonantes` (encapsula toda la lógica de donantes)
+
+```jsx
+// hooks/useDonantes.js
+import { useState, useEffect } from 'react';
+
+export function useDonantes() {
   const [donantes, setDonantes] = useState([]);
   const [cargando, setCargando] = useState(true);
 
-  useEffect(() => {
-    fetch('/api/donantes')
-      .then(r => r.json())
-      .then(d => { setDonantes(d); setCargando(false); });
-  }, []);
+  const cargar = async () => {
+    setCargando(true);
+    const r = await fetch('/api/donantes');
+    setDonantes(await r.json());
+    setCargando(false);
+  };
 
   const eliminar = async (rut) => {
     await fetch(`/api/donantes/${rut}`, { method: 'DELETE' });
     setDonantes(prev => prev.filter(d => d.rut !== rut));
   };
 
-  return <ListaDonantesView donantes={donantes} cargando={cargando} onEliminar={eliminar} />;
+  const crear = async (datos) => {
+    const r = await fetch('/api/donantes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(datos)
+    });
+    const nuevo = await r.json();
+    setDonantes(prev => [...prev, nuevo]);
+  };
+
+  useEffect(() => { cargar(); }, []);
+
+  return { donantes, cargando, eliminar, crear };
 }
 ```
 
-#### Versión moderna con custom hook + React Query
+#### Ejemplo 3: componente que solo presenta
 
 ```jsx
-// Hook: reemplaza al "Container" tradicional
-function useDonantes() {
-  const qc = useQueryClient();
-  const { data, isLoading } = useQuery({
-    queryKey: ['donantes'],
-    queryFn: () => fetch('/api/donantes').then(r => r.json())
-  });
-  const mEliminar = useMutation({
-    mutationFn: (rut) => fetch(`/api/donantes/${rut}`, { method: 'DELETE' }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['donantes'] })
-  });
-  return { donantes: data ?? [], cargando: isLoading, eliminar: mEliminar.mutate };
-}
+// components/DonantesPage.jsx
+function DonantesPage() {
+  const { donantes, cargando, eliminar, crear } = useDonantes();
 
-// Vista (100% presentacional)
-function ListaDonantes() {
-  const { donantes, cargando, eliminar } = useDonantes();
-  return <ListaDonantesView donantes={donantes} cargando={cargando} onEliminar={eliminar} />;
-}
-```
+  if (cargando) return <p>Cargando…</p>;
 
-**Cuándo elegirlo:** cuando quieres reutilizar componentes visuales en distintas pantallas, facilitar tests unitarios y documentarlos en Storybook.
-
----
-
-### 2.4. Atomic Design
-
-Metodología que organiza los componentes como átomos de un sistema de diseño:
-
-1. **Átomos:** botones, inputs, labels.
-2. **Moléculas:** un campo de formulario (input + label + error).
-3. **Organismos:** un formulario completo, una tarjeta de usuario.
-4. **Plantillas:** estructura de página sin datos reales.
-5. **Páginas:** plantillas con datos reales.
-
-#### Estructura de carpetas recomendada
-
-```
-src/
-├── components/
-│   ├── atoms/
-│   │   ├── Button.jsx
-│   │   ├── Input.jsx
-│   │   └── Label.jsx
-│   ├── molecules/
-│   │   ├── FormField.jsx
-│   │   └── SearchBar.jsx
-│   ├── organisms/
-│   │   ├── DonanteForm.jsx
-│   │   └── DonantesTable.jsx
-│   ├── templates/
-│   │   └── DashboardTemplate.jsx
-│   └── pages/
-│       └── DashboardPage.jsx
-```
-
-#### Ejemplos de cada nivel
-
-```jsx
-// ── ÁTOMO: Input ──
-export function Input({ error, ...props }) {
   return (
-    <input
-      className={`border px-2 py-1 rounded ${error ? 'border-red-500' : 'border-gray-300'}`}
-      {...props}
-    />
-  );
-}
-
-// ── ÁTOMO: Label ──
-export function Label({ children, htmlFor }) {
-  return <label htmlFor={htmlFor} className="text-sm font-medium">{children}</label>;
-}
-
-// ── MOLÉCULA: FormField (Label + Input + error) ──
-export function FormField({ id, label, error, ...inputProps }) {
-  return (
-    <div className="mb-3">
-      <Label htmlFor={id}>{label}</Label>
-      <Input id={id} error={error} {...inputProps} />
-      {error && <small className="text-red-500">{error}</small>}
+    <div>
+      <h1>Donantes</h1>
+      <FormularioDonante onSubmit={crear} />
+      <ListaDonantes donantes={donantes} onEliminar={eliminar} />
     </div>
   );
 }
-
-// ── ORGANISMO: DonanteForm ──
-export function DonanteForm({ onSubmit }) {
-  const [nombre, setNombre] = useState('');
-  const [monto, setMonto] = useState(0);
-  const [errores, setErrores] = useState({});
-
-  const handle = (e) => {
-    e.preventDefault();
-    const err = {};
-    if (nombre.length < 2) err.nombre = 'Muy corto';
-    if (monto < 0) err.monto = 'Monto inválido';
-    setErrores(err);
-    if (!Object.keys(err).length) onSubmit({ nombre, monto });
-  };
-
-  return (
-    <form onSubmit={handle}>
-      <FormField id="nombre" label="Nombre" value={nombre} onChange={e => setNombre(e.target.value)} error={errores.nombre} />
-      <FormField id="monto" label="Monto" type="number" value={monto} onChange={e => setMonto(+e.target.value)} error={errores.monto} />
-      <Button texto="Guardar" />
-    </form>
-  );
-}
-
-// ── PÁGINA ──
-export function NuevoDonantePage() {
-  const nav = useNavigate();
-  return (
-    <DashboardTemplate titulo="Nuevo donante">
-      <DonanteForm onSubmit={async (data) => {
-        await fetch('/api/donantes', { method: 'POST', body: JSON.stringify(data) });
-        nav('/donantes');
-      }} />
-    </DashboardTemplate>
-  );
-}
 ```
 
-**Cuándo elegirlo:** proyectos con un sistema de diseño (Figma detrás) o equipos que comparten una librería visual.
+Observa cómo el componente **no tiene ningún `fetch`**, solo consume el hook. Eso se llama **componente presentacional**.
 
----
-
-### 2.5. Flux / Redux / Store centralizado
-
-Patrón para manejar el **estado global** con flujo unidireccional.
-
-#### Ejemplo con Redux Toolkit
+#### Otros hooks comunes
 
 ```jsx
-// store/carritoSlice.js
-import { createSlice } from '@reduxjs/toolkit';
-
-export const carritoSlice = createSlice({
-  name: 'carrito',
-  initialState: { items: [] },
-  reducers: {
-    agregar: (state, action) => { state.items.push(action.payload); },
-    quitar: (state, action) => { state.items = state.items.filter(i => i.id !== action.payload); },
-    vaciar: (state) => { state.items = []; }
-  }
-});
-export const { agregar, quitar, vaciar } = carritoSlice.actions;
-export default carritoSlice.reducer;
-
-// store/index.js
-import { configureStore } from '@reduxjs/toolkit';
-import carrito from './carritoSlice';
-export const store = configureStore({ reducer: { carrito } });
-
-// Uso en componente:
-function BotonAgregar({ producto }) {
-  const dispatch = useDispatch();
-  return <button onClick={() => dispatch(agregar(producto))}>Agregar</button>;
-}
-
-function Carrito() {
-  const items = useSelector(s => s.carrito.items);
-  return <p>{items.length} productos</p>;
-}
-```
-
-#### Ejemplo con Zustand (más simple, sin boilerplate)
-
-```jsx
-import { create } from 'zustand';
-
-export const useCarrito = create((set) => ({
-  items: [],
-  agregar: (p) => set((s) => ({ items: [...s.items, p] })),
-  quitar: (id) => set((s) => ({ items: s.items.filter(i => i.id !== id) })),
-  vaciar: () => set({ items: [] })
-}));
-
-// Uso:
-function BotonAgregar({ producto }) {
-  const agregar = useCarrito(s => s.agregar);
-  return <button onClick={() => agregar(producto)}>Agregar</button>;
-}
-```
-
-#### Ejemplo con Context + useReducer (sin librerías)
-
-```jsx
-const CarritoContext = createContext();
-
-function carritoReducer(state, action) {
-  switch (action.type) {
-    case 'AGREGAR': return { ...state, items: [...state.items, action.payload] };
-    case 'QUITAR': return { ...state, items: state.items.filter(i => i.id !== action.payload) };
-    default: return state;
-  }
-}
-
-export function CarritoProvider({ children }) {
-  const [state, dispatch] = useReducer(carritoReducer, { items: [] });
-  return <CarritoContext.Provider value={{ state, dispatch }}>{children}</CarritoContext.Provider>;
-}
-
-export function useCarrito() { return useContext(CarritoContext); }
-```
-
-**Regla práctica:**
-
-- Estado local corto → `useState`.
-- Estado compartido entre pocos componentes → `useContext + useReducer`.
-- Estado complejo a través de toda la app → **Zustand** (simple) o **Redux Toolkit** (más estricto).
-
----
-
-### 2.6. Custom Hooks (patrón específico de React)
-
-Los custom hooks son el **mecanismo principal de reutilización de lógica** en React.
-
-#### Ejemplos comunes
-
-```jsx
-// useFetch: pide datos a una URL
-function useFetch(url) {
-  const [data, setData] = useState(null);
-  const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState(null);
-  useEffect(() => {
-    let cancelado = false;
-    setCargando(true);
-    fetch(url)
-      .then(r => r.json())
-      .then(d => !cancelado && setData(d))
-      .catch(e => !cancelado && setError(e))
-      .finally(() => !cancelado && setCargando(false));
-    return () => { cancelado = true; };
-  }, [url]);
-  return { data, cargando, error };
-}
-
-// useDebounce: evita disparar acciones demasiado rápido
-function useDebounce(valor, ms = 300) {
+// useDebounce: retrasa un valor para evitar llamar a la API en cada tecla
+export function useDebounce(valor, ms = 300) {
   const [debounced, setDebounced] = useState(valor);
   useEffect(() => {
     const t = setTimeout(() => setDebounced(valor), ms);
@@ -551,128 +296,214 @@ function useDebounce(valor, ms = 300) {
   return debounced;
 }
 
-// useLocalStorage: persiste estado en localStorage
-function useLocalStorage(clave, initial) {
+// useLocalStorage: persiste estado entre recargas
+export function useLocalStorage(clave, inicial) {
   const [valor, setValor] = useState(() => {
     const s = localStorage.getItem(clave);
-    return s ? JSON.parse(s) : initial;
+    return s ? JSON.parse(s) : inicial;
   });
-  useEffect(() => {
-    localStorage.setItem(clave, JSON.stringify(valor));
-  }, [clave, valor]);
+  useEffect(() => localStorage.setItem(clave, JSON.stringify(valor)), [clave, valor]);
   return [valor, setValor];
-}
-
-// useAuth: acceso al usuario autenticado
-function useAuth() {
-  const [usuario, setUsuario] = useLocalStorage('usuario', null);
-  const login = async (email, pass) => {
-    const r = await fetch('/api/login', { method: 'POST', body: JSON.stringify({ email, pass }) });
-    const u = await r.json();
-    setUsuario(u);
-  };
-  const logout = () => setUsuario(null);
-  return { usuario, login, logout };
 }
 ```
 
-**Regla práctica:** si usas la misma lógica con `useEffect` y `useState` en dos componentes distintos, extráela a un custom hook.
+#### ¿Cuándo usarlo?
+
+Siempre que un componente tenga **más de un `useEffect`** o **lógica que se repite**.
+
+#### Pros
+
+- Componentes pequeños y fáciles de leer.
+- Lógica testeable por separado.
+- Reutilización real (un hook puede usarse en 10 pantallas).
+
+#### Contras
+
+- Requiere disciplina: es fácil dejar lógica dentro del componente si uno tiene apuro.
 
 ---
 
-### 2.7. Provider Pattern (Contexto)
+### 2.3. Manejo de estado global (Provider Pattern / Store)
 
-Inyecta dependencias globales sin "prop drilling".
+#### ¿Qué es?
+
+Un mecanismo para compartir datos entre componentes **que están muy separados en el árbol**, sin tener que pasar props a través de todos los niveles intermedios ("prop drilling").
+
+Hay tres implementaciones típicas:
+
+1. **React Context + useReducer** (nativo, sin librerías).
+2. **Zustand** (store global simple, muy liviano).
+3. **Redux Toolkit** (el estándar industrial clásico, más ceremonioso).
+
+#### ¿Qué problema resuelve?
+
+Ejemplo típico: el usuario autenticado debe estar disponible en la barra de navegación, en el perfil, en las rutas protegidas y en el logout. Pasar `usuario` como prop por cada componente es tedioso y frágil.
+
+#### Cuándo elegir qué
+
+| Situación | Herramienta recomendada |
+|---|---|
+| Estado compartido entre 2-3 componentes cercanos | Elevar el estado al padre común |
+| Estado global simple (tema, usuario, idioma) | React Context |
+| Estado global complejo con mucha lógica | Zustand |
+| Proyectos grandes que requieren convenciones estrictas | Redux Toolkit |
+
+#### Ejemplo 1: React Context + custom hook (auth)
 
 ```jsx
-// ThemeProvider
-const ThemeContext = createContext();
-export function ThemeProvider({ children }) {
-  const [tema, setTema] = useState('claro');
-  const toggle = () => setTema(t => t === 'claro' ? 'oscuro' : 'claro');
-  return <ThemeContext.Provider value={{ tema, toggle }}>{children}</ThemeContext.Provider>;
-}
-export const useTheme = () => useContext(ThemeContext);
+// context/AuthContext.jsx
+import { createContext, useContext, useState } from 'react';
 
-// AuthProvider
-const AuthContext = createContext();
+const AuthContext = createContext(null);
+
 export function AuthProvider({ children }) {
   const [usuario, setUsuario] = useState(null);
-  // ...login, logout...
-  return <AuthContext.Provider value={{ usuario, login, logout }}>{children}</AuthContext.Provider>;
+
+  const login = async (email, password) => {
+    const r = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const datos = await r.json();
+    setUsuario(datos.usuario);
+    localStorage.setItem('token', datos.token);
+  };
+
+  const logout = () => {
+    setUsuario(null);
+    localStorage.removeItem('token');
+  };
+
+  return (
+    <AuthContext.Provider value={{ usuario, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
-// Composición en la raíz
-function App() {
+export const useAuth = () => useContext(AuthContext);
+```
+
+```jsx
+// Uso en main.jsx
+<AuthProvider>
+  <Router>
+    <App />
+  </Router>
+</AuthProvider>
+
+// Uso en cualquier componente
+function Navbar() {
+  const { usuario, logout } = useAuth();
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <Router>...</Router>
-      </AuthProvider>
-    </ThemeProvider>
+    <nav>
+      {usuario ? <span>Hola, {usuario.nombre} <button onClick={logout}>Salir</button></span>
+               : <Link to="/login">Iniciar sesión</Link>}
+    </nav>
   );
 }
 ```
 
----
-
-### 2.8. Error Boundary Pattern
-
-Captura errores de render para evitar que toda la app se caiga.
+#### Ejemplo 2: Zustand (más simple que Redux, recomendado para la mayoría de proyectos)
 
 ```jsx
-class ErrorBoundary extends React.Component {
-  state = { error: null };
-  static getDerivedStateFromError(error) { return { error }; }
-  componentDidCatch(error, info) { console.error(error, info); }
-  render() {
-    if (this.state.error) {
-      return <div className="p-4 bg-red-100">Algo salió mal. {String(this.state.error)}</div>;
-    }
-    return this.props.children;
-  }
+// stores/carritoStore.js
+import { create } from 'zustand';
+
+export const useCarrito = create((set) => ({
+  items: [],
+  agregar: (producto) => set(s => ({ items: [...s.items, producto] })),
+  quitar: (id) => set(s => ({ items: s.items.filter(i => i.id !== id) })),
+  vaciar: () => set({ items: [] }),
+  total: () => { /* calcula total */ }
+}));
+```
+
+```jsx
+// Uso directo, sin Provider
+function BotonAgregar({ producto }) {
+  const agregar = useCarrito(s => s.agregar);
+  return <Boton texto="Agregar" onClick={() => agregar(producto)} />;
 }
 
-// Uso:
-<ErrorBoundary>
-  <Dashboard />
-</ErrorBoundary>
+function CarritoIcono() {
+  const cantidad = useCarrito(s => s.items.length);
+  return <span>🛒 {cantidad}</span>;
+}
 ```
+
+#### Ejemplo 3: Redux Toolkit (si el equipo prefiere el estándar clásico)
+
+```jsx
+// store/carritoSlice.js
+import { createSlice } from '@reduxjs/toolkit';
+
+const carritoSlice = createSlice({
+  name: 'carrito',
+  initialState: { items: [] },
+  reducers: {
+    agregar: (state, action) => { state.items.push(action.payload); },
+    quitar: (state, action) => { state.items = state.items.filter(i => i.id !== action.payload); }
+  }
+});
+
+export const { agregar, quitar } = carritoSlice.actions;
+export default carritoSlice.reducer;
+```
+
+#### ¿Cuándo NO usarlo?
+
+Si el estado solo lo necesitan 1-2 componentes cercanos, usar Context o un store global es sobreingeniería. Prefiere pasar props.
 
 ---
 
-### 2.9. CSR, SSR, SSG, ISR (estrategias de renderizado)
+### 2.4. Estrategias de renderizado: CSR, SSR, SSG, ISR
 
-| Estrategia | Dónde se renderiza | Ejemplo |
-|---|---|---|
-| **CSR** | En el navegador | Create React App, Vite + React |
-| **SSR** | En el servidor en cada petición | Next.js `getServerSideProps` / Server Components |
-| **SSG** | En el build | Next.js `getStaticProps` / Astro |
-| **ISR** | Estático con revalidación | Next.js `revalidate` |
+#### ¿Qué es?
 
-#### CSR (React tradicional)
+No es un patrón de código, sino **dónde y cuándo se genera el HTML** que recibe el usuario. Cada opción tiene consecuencias importantes para SEO, performance y costos.
+
+| Estrategia | Se renderiza en | Cuándo | Ejemplo de uso |
+|---|---|---|---|
+| **CSR** (Client-Side) | Navegador, en tiempo real | En cada carga | Dashboard, app interna, herramientas |
+| **SSR** (Server-Side) | Servidor, en cada petición | Dato muy fresco | Noticias, redes sociales, feed |
+| **SSG** (Static Site Generation) | Build time | Datos rara vez cambian | Blog, docs, landing |
+| **ISR** (Incremental Static Regeneration) | Build + revalidación | SSG + datos semi-dinámicos | E-commerce, catálogos |
+
+#### ¿Qué problema resuelve?
+
+El SEO y el tiempo de carga dependen fuertemente del HTML que llega al navegador. Una SPA clásica (CSR) entrega un HTML vacío y ejecuta JavaScript para llenarlo, lo que Google no siempre indexa bien y resulta lento en conexiones pobres.
+
+#### Ejemplo CSR (Vite + React)
 
 ```jsx
-// main.jsx (Vite)
-ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+// main.jsx
+import { createRoot } from 'react-dom/client';
+import App from './App';
+createRoot(document.getElementById('root')).render(<App />);
 ```
 
-#### SSR con Next.js (App Router)
+Todo se renderiza en el navegador. Excelente para apps internas; malo para SEO.
+
+#### Ejemplo SSR con Next.js (App Router)
 
 ```jsx
-// app/donantes/page.jsx – Server Component
+// app/noticias/page.jsx – Server Component por defecto
 export default async function Page() {
-  const r = await fetch('https://api.fundacion.cl/donantes', { cache: 'no-store' });
-  const donantes = await r.json();
+  const r = await fetch('https://api.ejemplo.cl/noticias', { cache: 'no-store' });
+  const noticias = await r.json();
   return (
     <ul>
-      {donantes.map(d => <li key={d.rut}>{d.nombre}</li>)}
+      {noticias.map(n => <li key={n.id}>{n.titulo}</li>)}
     </ul>
   );
 }
 ```
 
-#### SSG con Next.js
+El HTML sale listo desde el servidor en cada request.
+
+#### Ejemplo SSG con Next.js
 
 ```jsx
 // app/blog/[slug]/page.jsx
@@ -680,67 +511,72 @@ export async function generateStaticParams() {
   const posts = await getPosts();
   return posts.map(p => ({ slug: p.slug }));
 }
+
 export default async function Post({ params }) {
   const post = await getPost(params.slug);
-  return <article>{post.title}</article>;
+  return <article><h1>{post.titulo}</h1>{post.contenido}</article>;
 }
 ```
 
-#### ISR con Next.js
+Se genera HTML estático en el build. Ideal para blogs y documentación.
+
+#### Ejemplo ISR
 
 ```jsx
-export const revalidate = 60; // regenera cada 60 segundos
-export default async function Page() {
-  const data = await fetch('https://api.ejemplo.cl/datos').then(r => r.json());
-  return <Vista datos={data} />;
+export const revalidate = 60; // HTML estático pero se regenera cada 60 s
+export default async function Catalogo() {
+  const productos = await fetch('/api/productos').then(r => r.json());
+  return <Grilla productos={productos} />;
 }
 ```
 
----
+#### Regla práctica
 
-### 2.10. BFF (Backend For Frontend)
-
-Un pequeño backend pensado para servir a un frontend específico.
-
-```jsx
-// bff/server.js (Node + Express)
-app.get('/bff/perfil', async (req, res) => {
-  const [user, orders, notifs] = await Promise.all([
-    fetch('https://users-api/perfil').then(r => r.json()),
-    fetch('https://orders-api/recientes').then(r => r.json()),
-    fetch('https://notifs-api/pendientes').then(r => r.json())
-  ]);
-  res.json({ user, orders, notifs });
-});
-
-// React consume una sola llamada:
-const { data } = useFetch('/bff/perfil');
-```
+- **¿Importa el SEO?** Elige SSR, SSG o ISR (con Next.js).
+- **¿Es una app interna (admin, dashboard, herramienta)?** CSR con Vite + React es suficiente.
 
 ---
 
-### 2.11. Microfrontends
+## 3. Patrones esenciales de Backend (Node.js)
 
-Dividir la aplicación en varias apps independientes. Para portafolios es **sobreingeniería**. Solo mencionado por completitud.
+Cinco patrones que cubren el 90 % de los backends de portafolio.
 
 ---
 
-## 3. Patrones de diseño de backend (ejemplos con Node.js)
+### 3.1. Arquitectura en Capas (Layered Architecture)
 
-### 3.1. Arquitectura en Capas (Layered / N-Tier)
+#### ¿Qué es?
 
-La más común y recomendable para empezar. Divide el backend en capas con responsabilidades claras:
+Divide el backend en **capas apiladas** con responsabilidades claras:
 
 ```
-Request → Controller → Service → Repository → DB
-                                    ↓
-Response ← Controller ← Service ← Repository
+Request → Controller → Service → Repository → Base de datos
 ```
 
-#### Ejemplo completo en Node.js + Express + PostgreSQL
+- **Routes:** definen qué URL corresponde a qué controller.
+- **Controller:** recibe la petición HTTP y delega.
+- **Service:** contiene las **reglas de negocio**.
+- **Repository:** habla con la base de datos.
+- **Model / Entity:** representa las estructuras de datos.
+
+#### ¿Qué problema resuelve?
+
+Sin capas, un solo archivo hace todo: lee la petición, valida, calcula, habla con la base de datos y devuelve JSON. Resultado: archivos de 500 líneas, imposibles de testear y cambiar.
+
+Las capas separan responsabilidades. Si mañana cambias de Postgres a MongoDB, solo tocas el repository. Si la regla "un donante no puede donar montos negativos" cambia, solo tocas el service.
+
+#### Principios
+
+1. Una capa solo puede llamar a la capa inmediatamente inferior.
+2. La capa superior NO debe saber detalles de implementación de la inferior.
+3. La lógica de negocio vive en **services**, no en controllers.
+
+#### Ejemplo completo (Node + Express + PostgreSQL)
 
 ```
 src/
+├── config/
+│   └── db.js
 ├── routes/
 │   └── donantes.routes.js
 ├── controllers/
@@ -749,30 +585,32 @@ src/
 │   └── donantes.service.js
 ├── repositories/
 │   └── donantes.repository.js
-├── db/
-│   └── pool.js
 ├── middleware/
 │   └── errorHandler.js
-└── index.js
+├── app.js
+└── server.js
 ```
 
 ```js
-// db/pool.js
+// config/db.js
 const { Pool } = require('pg');
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-module.exports = pool;
+module.exports = new Pool({ connectionString: process.env.DATABASE_URL });
+```
 
+```js
 // repositories/donantes.repository.js
-const pool = require('../db/pool');
+const pool = require('../config/db');
 
 async function findAll() {
   const { rows } = await pool.query('SELECT * FROM donantes ORDER BY rut');
   return rows;
 }
+
 async function findByRut(rut) {
   const { rows } = await pool.query('SELECT * FROM donantes WHERE rut = $1', [rut]);
   return rows[0] ?? null;
 }
+
 async function insert({ rut, nombre, monto }) {
   const { rows } = await pool.query(
     'INSERT INTO donantes (rut, nombre, monto) VALUES ($1, $2, $3) RETURNING *',
@@ -780,45 +618,59 @@ async function insert({ rut, nombre, monto }) {
   );
   return rows[0];
 }
+
 async function remove(rut) {
   const { rowCount } = await pool.query('DELETE FROM donantes WHERE rut = $1', [rut]);
   return rowCount > 0;
 }
 
 module.exports = { findAll, findByRut, insert, remove };
+```
 
+```js
 // services/donantes.service.js
 const repo = require('../repositories/donantes.repository');
 
-async function listar() { return repo.findAll(); }
+async function listar() {
+  return repo.findAll();
+}
+
 async function crear(data) {
   if (data.monto < 0) throw Object.assign(new Error('Monto inválido'), { status: 400 });
-  const existente = await repo.findByRut(data.rut);
-  if (existente) throw Object.assign(new Error('RUT duplicado'), { status: 409 });
+  if (await repo.findByRut(data.rut)) {
+    throw Object.assign(new Error('RUT duplicado'), { status: 409 });
+  }
   return repo.insert(data);
 }
+
 async function eliminar(rut) {
   const ok = await repo.remove(rut);
   if (!ok) throw Object.assign(new Error('No encontrado'), { status: 404 });
 }
 
 module.exports = { listar, crear, eliminar };
+```
 
+```js
 // controllers/donantes.controller.js
 const service = require('../services/donantes.service');
 
 async function listar(req, res, next) {
   try { res.json(await service.listar()); } catch (e) { next(e); }
 }
+
 async function crear(req, res, next) {
   try { res.status(201).json(await service.crear(req.body)); } catch (e) { next(e); }
 }
+
 async function eliminar(req, res, next) {
   try { await service.eliminar(+req.params.rut); res.status(204).send(); } catch (e) { next(e); }
 }
 
 module.exports = { listar, crear, eliminar };
+```
 
+```js
 // routes/donantes.routes.js
 const router = require('express').Router();
 const c = require('../controllers/donantes.controller');
@@ -828,85 +680,159 @@ router.post('/', c.crear);
 router.delete('/:rut', c.eliminar);
 
 module.exports = router;
+```
 
-// middleware/errorHandler.js
-module.exports = (err, req, res, next) => {
-  const status = err.status ?? 500;
-  res.status(status).json({ error: err.message });
-};
-
-// index.js
+```js
+// app.js
 const express = require('express');
 const donantes = require('./routes/donantes.routes');
 const errorHandler = require('./middleware/errorHandler');
-const app = express();
 
+const app = express();
 app.use(express.json());
 app.use('/api/donantes', donantes);
 app.use(errorHandler);
-
-app.listen(3000, () => console.log('API en :3000'));
+module.exports = app;
 ```
 
-**Cuándo elegirlo:** patrón por defecto para cualquier proyecto de portafolio. Es simple, probado y didáctico.
+```js
+// server.js
+const app = require('./app');
+app.listen(process.env.PORT || 3000, () => console.log('API viva'));
+```
+
+#### Regla de oro
+
+**Si el código tiene `req` o `res`, no es un service.** Si el código tiene SQL, no es un controller. Mantén esas líneas de separación y todo se ordena.
+
+#### Pros y contras
+
+**Pros:** simple, probado, didáctico, el estándar en cursos y empresas medianas.
+**Contras:** si el negocio es muy complejo, puede quedarse corto (ahí se evoluciona a Hexagonal).
 
 ---
 
-### 3.2. MVC en backend
+### 3.2. MVC (Model-View-Controller)
 
-Modelo-Vista-Controlador cuando el backend renderiza HTML (EJS, Pug, Handlebars).
+#### ¿Qué es?
+
+El patrón arquitectónico más conocido de la historia del backend. Divide la aplicación en:
+
+- **Model:** los datos y las reglas de cómo se manipulan.
+- **View:** la presentación (en backend tradicional, una plantilla HTML; en APIs modernas, JSON).
+- **Controller:** el intermediario que recibe el input, llama al Model, elige la View.
+
+Framework-representantes: Django, Laravel, Ruby on Rails, ASP.NET MVC, Spring MVC.
+
+#### Relación con Layered
+
+En proyectos Node.js modernos, **MVC y Layered se combinan**: MVC es la visión general (quién habla con quién), y Layered añade las subcapas Service y Repository. En la práctica hoy casi nadie hace "MVC puro" sin Service Layer.
+
+#### Ejemplo MVC clásico en Node (con plantillas EJS)
 
 ```js
 // models/donante.js
-const pool = require('../db/pool');
+const pool = require('../config/db');
 module.exports = {
-  all: async () => (await pool.query('SELECT * FROM donantes')).rows
+  all: async () => (await pool.query('SELECT * FROM donantes')).rows,
+  crear: async (d) => (await pool.query('INSERT INTO donantes VALUES($1,$2,$3) RETURNING *',
+    [d.rut, d.nombre, d.monto])).rows[0]
 };
+```
 
+```js
 // controllers/donantesController.js
 const Donante = require('../models/donante');
+
 exports.index = async (req, res) => {
   const donantes = await Donante.all();
   res.render('donantes/index', { donantes });
 };
 
-// views/donantes/index.ejs
+exports.nuevo = (req, res) => res.render('donantes/nuevo');
+
+exports.crear = async (req, res) => {
+  await Donante.crear(req.body);
+  res.redirect('/donantes');
+};
+```
+
+```ejs
+<!-- views/donantes/index.ejs -->
+<h1>Donantes</h1>
 <ul>
   <% donantes.forEach(d => { %>
     <li><%= d.nombre %> – $<%= d.monto %></li>
   <% }); %>
 </ul>
+<a href="/donantes/nuevo">Agregar</a>
+```
 
+```js
 // app.js
 app.set('view engine', 'ejs');
-app.get('/donantes', require('./controllers/donantesController').index);
+const c = require('./controllers/donantesController');
+app.get('/donantes', c.index);
+app.get('/donantes/nuevo', c.nuevo);
+app.post('/donantes', c.crear);
 ```
+
+#### ¿Cuándo elegirlo?
+
+Cuando el backend **renderiza HTML** (proyectos Laravel/Rails-style), o cuando quieres una visión muy clásica. Si el backend es una **API REST** (el caso del 95 % de los proyectos del curso), se prefiere Layered + Service Layer.
 
 ---
 
-### 3.3. Repository Pattern (con inversión de dependencias)
+### 3.3. Repository Pattern
 
-Abstrae el acceso a la base de datos detrás de una interfaz.
+#### ¿Qué es?
+
+Una **abstracción** sobre el acceso a la base de datos. El service nunca ve SQL ni la librería del driver; llama a métodos como `repo.findByRut(123)` y confía en que "algo" hace la consulta.
+
+Así, puedes tener varias implementaciones del mismo repositorio intercambiables:
+
+- `DonanteRepositoryPostgres` (producción, con PostgreSQL).
+- `DonanteRepositoryMongo` (si cambias de DB).
+- `DonanteRepositoryMemory` (para tests unitarios).
+
+#### ¿Qué problema resuelve?
+
+1. **Independencia de la base de datos:** cambiar Postgres por Mongo no requiere tocar services.
+2. **Testeo:** puedes probar la lógica con un repositorio en memoria sin levantar una DB real.
+3. **Consultas reutilizables:** si "buscar donantes activos" se usa en 3 lugares, vive en el repo.
+
+#### Ejemplo: repositorio intercambiable
 
 ```js
-// repositories/donantes.repository.postgres.js
-const pool = require('../db/pool');
+// repositories/donantes.postgres.js
+const pool = require('../config/db');
 module.exports = {
   async findAll() { return (await pool.query('SELECT * FROM donantes')).rows; },
-  async findByRut(rut) { return (await pool.query('SELECT * FROM donantes WHERE rut=$1', [rut])).rows[0] ?? null; },
-  async insert(d) { return (await pool.query('INSERT INTO donantes VALUES($1,$2,$3) RETURNING *', [d.rut, d.nombre, d.monto])).rows[0]; }
+  async findByRut(rut) {
+    const { rows } = await pool.query('SELECT * FROM donantes WHERE rut=$1', [rut]);
+    return rows[0] ?? null;
+  },
+  async insert(d) {
+    const { rows } = await pool.query(
+      'INSERT INTO donantes VALUES($1,$2,$3) RETURNING *',
+      [d.rut, d.nombre, d.monto]
+    );
+    return rows[0];
+  }
 };
 
-// repositories/donantes.repository.memory.js (para tests)
+// repositories/donantes.memory.js (ideal para tests)
 let datos = [];
 module.exports = {
   async findAll() { return [...datos]; },
   async findByRut(rut) { return datos.find(d => d.rut === rut) ?? null; },
   async insert(d) { datos.push(d); return d; },
-  _reset: () => { datos = []; }
+  _reset() { datos = []; }
 };
+```
 
-// services/donantes.service.js (inyección por parámetro)
+```js
+// services/donantes.service.js (recibe el repo como dependencia)
 function crearService(repo) {
   return {
     async listar() { return repo.findAll(); },
@@ -918,53 +844,49 @@ function crearService(repo) {
 }
 module.exports = crearService;
 
-// Producción
-const repoProd = require('./repositories/donantes.repository.postgres');
+// Uso en producción
+const repoProd = require('./repositories/donantes.postgres');
 const service = require('./services/donantes.service')(repoProd);
 
-// Tests
-const repoMem = require('./repositories/donantes.repository.memory');
+// Uso en tests
+const repoMem = require('./repositories/donantes.memory');
 const serviceTest = require('./services/donantes.service')(repoMem);
 ```
 
-**Beneficio:** el `service` ya no depende de la base de datos real. Puedes testearlo con la versión en memoria sin levantar Postgres.
+#### ¿Cuándo usarlo?
+
+- Siempre que te interese tener tests unitarios reales.
+- Cuando el proyecto podría migrar de base de datos en el futuro.
+- Cuando las mismas consultas se repiten en distintos services.
+
+Si tu proyecto es un prototipo pequeño, puedes saltártelo. Pero en un portafolio serio, demostrar este patrón sube la calidad percibida.
 
 ---
 
-### 3.4. Service Layer
+### 3.4. DTO + Validación de entrada
 
-Todas las reglas de negocio en servicios independientes del framework web.
+#### ¿Qué es?
 
-```js
-// services/donaciones.service.js
-const donanteRepo = require('../repositories/donantes.repository');
-const emailService = require('./email.service');
+Un **DTO (Data Transfer Object)** es un objeto pensado para viajar entre capas o entre cliente y servidor. Define la **forma esperada de los datos**.
 
-async function registrarDonacion({ rut, nombre, monto, correo }) {
-  if (monto < 1000) throw Object.assign(new Error('Monto mínimo $1000'), { status: 400 });
+La **validación** es el proceso de verificar que los datos recibidos cumplen el DTO: tipos correctos, campos requeridos, rangos válidos.
 
-  let donante = await donanteRepo.findByRut(rut);
-  if (!donante) {
-    donante = await donanteRepo.insert({ rut, nombre, monto: 0 });
-  }
-  await donanteRepo.sumarMonto(rut, monto);
-  await emailService.enviarAgradecimiento(correo, monto);
+Librerías populares en Node: **Zod, Joi, class-validator, Yup**.
 
-  return { rut, totalDonado: donante.monto + monto };
-}
+#### ¿Qué problema resuelve?
 
-module.exports = { registrarDonacion };
-```
+**Nunca** confíes en el cliente. Sin validación, un atacante (o un bug de tu frontend) puede mandar `{ rut: "hola", monto: -99999 }` y romper tu base de datos.
 
-**Regla práctica:** si el código tiene `req` o `res`, no es un servicio, es un controller.
+Ventajas del DTO:
 
----
+1. Mensajes de error claros ("el campo monto debe ser ≥ 0").
+2. Seguridad básica (rechaza ataques triviales).
+3. Documentación implícita (el DTO es una especificación).
 
-### 3.5. DTO (Data Transfer Object) + Validación
-
-#### Con Zod
+#### Ejemplo con Zod (recomendado en 2026)
 
 ```js
+// dtos/donante.dto.js
 const { z } = require('zod');
 
 const crearDonanteDTO = z.object({
@@ -974,51 +896,82 @@ const crearDonanteDTO = z.object({
   email: z.string().email().optional()
 });
 
-// Middleware de validación
-function validar(schema) {
-  return (req, res, next) => {
-    const r = schema.safeParse(req.body);
-    if (!r.success) return res.status(400).json({ error: r.error.issues });
-    req.body = r.data;
-    next();
-  };
-}
-
-// Uso:
-router.post('/', validar(crearDonanteDTO), controller.crear);
+module.exports = { crearDonanteDTO };
 ```
 
-#### Con Joi
+```js
+// middleware/validate.js
+module.exports = (schema) => (req, res, next) => {
+  const r = schema.safeParse(req.body);
+  if (!r.success) {
+    return res.status(400).json({
+      error: 'Datos inválidos',
+      detalles: r.error.issues
+    });
+  }
+  req.body = r.data; // datos ya limpios y tipados
+  next();
+};
+```
+
+```js
+// routes/donantes.routes.js
+const validate = require('../middleware/validate');
+const { crearDonanteDTO } = require('../dtos/donante.dto');
+
+router.post('/', validate(crearDonanteDTO), controller.crear);
+```
+
+#### Ejemplo con Joi
 
 ```js
 const Joi = require('joi');
 
-const crearDonanteSchema = Joi.object({
+const schema = Joi.object({
   rut: Joi.number().integer().positive().required(),
   nombre: Joi.string().min(2).max(80).required(),
-  monto: Joi.number().min(0).required()
+  monto: Joi.number().min(0).required(),
+  email: Joi.string().email().optional()
 });
 
-function validar(schema) {
-  return (req, res, next) => {
-    const { error, value } = schema.validate(req.body);
-    if (error) return res.status(400).json({ error: error.details });
-    req.body = value;
-    next();
-  };
-}
+// Middleware equivalente
+module.exports = (s) => (req, res, next) => {
+  const { error, value } = s.validate(req.body);
+  if (error) return res.status(400).json({ error: error.details });
+  req.body = value;
+  next();
+};
 ```
+
+#### ¿Cuándo usarlo?
+
+**En toda ruta que reciba body** (POST, PUT, PATCH). También en query params cuando son importantes.
 
 ---
 
-### 3.6. Middleware Pipeline
+### 3.5. Middleware Pipeline
 
-La petición pasa por una cadena de funciones.
+#### ¿Qué es?
+
+Patrón nativo de Express (y muy común en Koa, Fastify, ASP.NET Core, Django). La petición pasa por una **cadena de funciones**; cada una puede inspeccionarla, modificarla, responderla o pasarla al siguiente.
+
+```
+Request → [logger] → [cors] → [auth] → [validate] → [controller] → Response
+```
+
+#### ¿Qué problema resuelve?
+
+Evita repetir lógica (autenticación, logging, CORS, rate limiting) en cada ruta. Se declara una vez y se aplica a todas.
+
+#### Ejemplos típicos
 
 ```js
 // middleware/logger.js
 module.exports = (req, res, next) => {
-  console.log(`${new Date().toISOString()} ${req.method} ${req.url}`);
+  const inicio = Date.now();
+  res.on('finish', () => {
+    console.log(`${req.method} ${req.url} ${res.statusCode} ${Date.now() - inicio}ms`);
+  });
   next();
 };
 
@@ -1026,7 +979,7 @@ module.exports = (req, res, next) => {
 const jwt = require('jsonwebtoken');
 module.exports = (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1];
-  if (!token) return res.status(401).json({ error: 'No autorizado' });
+  if (!token) return res.status(401).json({ error: 'Falta token' });
   try {
     req.user = jwt.verify(token, process.env.JWT_SECRET);
     next();
@@ -1035,464 +988,220 @@ module.exports = (req, res, next) => {
   }
 };
 
+// middleware/errorHandler.js
+module.exports = (err, req, res, next) => {
+  const status = err.status ?? 500;
+  console.error(`[${status}]`, err.message);
+  res.status(status).json({ error: err.message });
+};
+
 // middleware/rateLimit.js (simple)
 const cuentas = new Map();
 module.exports = (req, res, next) => {
   const ip = req.ip;
   const ahora = Date.now();
-  const reg = cuentas.get(ip) ?? { cnt: 0, reset: ahora + 60000 };
-  if (ahora > reg.reset) { reg.cnt = 0; reg.reset = ahora + 60000; }
-  reg.cnt++;
+  const reg = cuentas.get(ip) ?? { count: 0, reset: ahora + 60000 };
+  if (ahora > reg.reset) { reg.count = 0; reg.reset = ahora + 60000; }
+  reg.count++;
   cuentas.set(ip, reg);
-  if (reg.cnt > 100) return res.status(429).json({ error: 'Demasiadas peticiones' });
+  if (reg.count > 100) return res.status(429).json({ error: 'Muchas peticiones' });
   next();
 };
-
-// middleware/errorHandler.js
-module.exports = (err, req, res, next) => {
-  console.error(err);
-  res.status(err.status ?? 500).json({ error: err.message });
-};
-
-// Uso en index.js:
-app.use(logger);
-app.use(rateLimit);
-app.use('/api/privado', auth, rutasPrivadas);
-app.use('/api/publico', rutasPublicas);
-app.use(errorHandler);
-```
-
----
-
-### 3.7. Singleton
-
-Una sola instancia global. Útil para conexiones.
-
-```js
-// db/pool.js – Singleton implícito (módulos Node se cachean)
-const { Pool } = require('pg');
-const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 10 });
-module.exports = pool;
-
-// logger/logger.js – Singleton explícito
-class Logger {
-  static instance;
-  static getInstance() {
-    if (!this.instance) this.instance = new Logger();
-    return this.instance;
-  }
-  info(msg) { console.log(`[INFO] ${msg}`); }
-  error(msg) { console.error(`[ERROR] ${msg}`); }
-}
-module.exports = Logger.getInstance();
-```
-
-**Cuidado:** abusar del Singleton dificulta las pruebas. Preferir inyección cuando sea posible.
-
----
-
-### 3.8. Factory
-
-Crea objetos sin exponer la lógica de construcción.
-
-```js
-// factories/notificacionFactory.js
-const EmailNotifier = require('../notifiers/email');
-const SmsNotifier = require('../notifiers/sms');
-const PushNotifier = require('../notifiers/push');
-
-function crearNotificador(canal) {
-  switch (canal) {
-    case 'email': return new EmailNotifier();
-    case 'sms': return new SmsNotifier();
-    case 'push': return new PushNotifier();
-    default: throw new Error(`Canal no soportado: ${canal}`);
-  }
-}
-module.exports = { crearNotificador };
-
-// Uso:
-const { crearNotificador } = require('./factories/notificacionFactory');
-const notificador = crearNotificador(usuario.canalPreferido);
-await notificador.enviar(mensaje);
-```
-
----
-
-### 3.9. Strategy
-
-Intercambia algoritmos en tiempo de ejecución.
-
-```js
-// strategies/pago/webpay.strategy.js
-module.exports = {
-  async cobrar(monto, datos) {
-    // llamada a Webpay
-    return { ok: true, proveedor: 'webpay', id: 'WP123' };
-  }
-};
-
-// strategies/pago/mercadopago.strategy.js
-module.exports = {
-  async cobrar(monto, datos) {
-    // llamada a MercadoPago
-    return { ok: true, proveedor: 'mercadopago', id: 'MP456' };
-  }
-};
-
-// services/pagos.service.js
-const strategies = {
-  webpay: require('../strategies/pago/webpay.strategy'),
-  mercadopago: require('../strategies/pago/mercadopago.strategy')
-};
-
-async function procesarPago(proveedor, monto, datos) {
-  const estrategia = strategies[proveedor];
-  if (!estrategia) throw new Error(`Proveedor no soportado: ${proveedor}`);
-  return estrategia.cobrar(monto, datos);
-}
-
-module.exports = { procesarPago };
-```
-
----
-
-### 3.10. Observer / Event Emitter
-
-Notificar a varios interesados cuando pasa algo.
-
-```js
-// events/bus.js
-const EventEmitter = require('events');
-const bus = new EventEmitter();
-module.exports = bus;
-
-// services/donaciones.service.js
-const bus = require('../events/bus');
-async function registrarDonacion(data) {
-  const donacion = await repo.insert(data);
-  bus.emit('donacion.creada', donacion); // Notifica a quien esté escuchando
-  return donacion;
-}
-
-// listeners/email.listener.js
-const bus = require('../events/bus');
-const emailSvc = require('../services/email.service');
-bus.on('donacion.creada', async (d) => {
-  await emailSvc.enviarAgradecimiento(d.email, d.monto);
-});
-
-// listeners/reportes.listener.js
-const bus = require('../events/bus');
-const reportesSvc = require('../services/reportes.service');
-bus.on('donacion.creada', async (d) => {
-  await reportesSvc.actualizarTotales(d.monto);
-});
-```
-
-**Beneficio:** el servicio de donaciones no sabe nada del email ni de reportes. Acoplamiento bajo.
-
----
-
-### 3.11. Decorator (NestJS)
-
-```ts
-@Controller('donantes')
-export class DonantesController {
-  constructor(private service: DonantesService) {}
-
-  @Get()
-  async listar() {
-    return this.service.listar();
-  }
-
-  @Post()
-  @UseGuards(AuthGuard)
-  async crear(@Body() dto: CrearDonanteDto) {
-    return this.service.crear(dto);
-  }
-}
-```
-
----
-
-### 3.12. Hexagonal / Clean Architecture
-
-El núcleo de negocio no conoce el framework ni la base de datos.
-
-```
-src/
-├── domain/                   ← núcleo puro, sin frameworks
-│   ├── entities/
-│   │   └── Donante.js
-│   └── ports/
-│       ├── DonanteRepository.js       (interfaz)
-│       └── Notificador.js             (interfaz)
-├── application/              ← casos de uso
-│   └── RegistrarDonacion.js
-├── infrastructure/           ← adaptadores
-│   ├── db/PostgresDonanteRepository.js
-│   ├── email/ResendNotificador.js
-│   └── http/ExpressServer.js
-└── main.js                   ← cablea todo (composition root)
 ```
 
 ```js
-// domain/entities/Donante.js
-class Donante {
-  constructor({ rut, nombre, monto }) {
-    if (monto < 0) throw new Error('Monto inválido');
-    this.rut = rut; this.nombre = nombre; this.monto = monto;
-  }
-}
-module.exports = Donante;
-
-// domain/ports/DonanteRepository.js
-class DonanteRepository {
-  async save(d) { throw new Error('No implementado'); }
-  async findByRut(rut) { throw new Error('No implementado'); }
-}
-module.exports = DonanteRepository;
-
-// application/RegistrarDonacion.js
-class RegistrarDonacion {
-  constructor(donanteRepo, notificador) {
-    this.donanteRepo = donanteRepo;
-    this.notificador = notificador;
-  }
-  async ejecutar({ rut, nombre, monto, email }) {
-    const donante = new Donante({ rut, nombre, monto });
-    await this.donanteRepo.save(donante);
-    await this.notificador.agradecer(email, monto);
-    return donante;
-  }
-}
-module.exports = RegistrarDonacion;
-
-// infrastructure/db/PostgresDonanteRepository.js
-const DonanteRepository = require('../../domain/ports/DonanteRepository');
-const pool = require('./pool');
-class PostgresDonanteRepository extends DonanteRepository {
-  async save(d) { await pool.query('INSERT INTO donantes VALUES($1,$2,$3)', [d.rut, d.nombre, d.monto]); }
-  async findByRut(rut) { return (await pool.query('SELECT * FROM donantes WHERE rut=$1', [rut])).rows[0] ?? null; }
-}
-module.exports = PostgresDonanteRepository;
-
-// main.js – composición
-const express = require('express');
-const PostgresDonanteRepository = require('./infrastructure/db/PostgresDonanteRepository');
-const ResendNotificador = require('./infrastructure/email/ResendNotificador');
-const RegistrarDonacion = require('./application/RegistrarDonacion');
-
-const caso = new RegistrarDonacion(new PostgresDonanteRepository(), new ResendNotificador());
+// app.js
 const app = express();
 app.use(express.json());
-app.post('/donaciones', async (req, res) => {
-  const d = await caso.ejecutar(req.body);
-  res.status(201).json(d);
-});
-app.listen(3000);
+app.use(require('./middleware/logger'));
+app.use(require('./middleware/rateLimit'));
+
+app.use('/api/publico', require('./routes/publico.routes'));
+app.use('/api/privado', require('./middleware/auth'), require('./routes/privado.routes'));
+
+app.use(require('./middleware/errorHandler'));
 ```
 
-**Cuándo elegirla:** proyectos con reglas de negocio complejas y larga vida. Un poco excesivo para un portafolio pequeño, pero **excelente** para mostrar madurez técnica en la defensa.
+#### ¿Cuándo usarlo?
+
+Siempre. Es parte de cómo Express funciona. La pregunta es **cuáles middlewares** incorporas: logger, cors, helmet (seguridad), auth, validate, rate limit, error handler.
 
 ---
 
-### 3.13. Dependency Injection manual (Composition Root)
+## 4. Arquitecturas más comunes (con diagramas)
 
-```js
-// container.js – un lugar único donde se crean las dependencias
-const pool = require('./db/pool');
-const donantesRepo = require('./repositories/donantes.repository')(pool);
-const emailService = require('./services/email.service')();
-const donantesService = require('./services/donantes.service')(donantesRepo, emailService);
-const donantesController = require('./controllers/donantes.controller')(donantesService);
-
-module.exports = { donantesController };
-```
+De las múltiples arquitecturas posibles, estas **cuatro** cubren lo que necesita un portafolio.
 
 ---
 
-### 3.14. CQRS y Event Sourcing
+### 4.1. Monolito clásico
 
-- **CQRS:** separa lectura (queries) de escritura (commands) con modelos distintos.
-- **Event Sourcing:** guarda eventos, no estado.
+Un solo proyecto desplegable con todo (frontend, backend, DB).
 
-Para portafolios es generalmente **sobreingeniería**. Mencionado por completitud.
+```mermaid
+flowchart LR
+    U[Usuario] --> APP[Aplicación Monolítica]
+    APP --> DB[(Base de datos)]
+```
+
+**Variante con Next.js full-stack** (frontend y backend en el mismo proyecto):
+
+```mermaid
+flowchart LR
+    U[Usuario] --> CDN[CDN - Vercel]
+    CDN --> NEXT[Next.js<br/>React + API Routes]
+    NEXT --> DB[(PostgreSQL<br/>Supabase o Neon)]
+```
+
+**Pros:** simple, rápido, fácil de debuggear.
+**Contras:** escalar partes por separado es complicado.
+**Cuándo:** casi siempre para un portafolio. La industria está revalorando el monolito.
 
 ---
 
-## 4. Estructuras de carpetas recomendadas
+### 4.2. Monolito Modular
 
-Elegir la estructura correcta es tan importante como elegir el patrón. A continuación, **varias propuestas** según el tamaño y tipo del proyecto.
+Un solo despliegue internamente dividido en **módulos independientes**. Es el mejor balance entre simpleza y buen diseño.
+
+```mermaid
+flowchart TB
+    U[Usuario] --> API[API Express]
+    subgraph "Monolito Modular"
+        API --> M1[Módulo Auth]
+        API --> M2[Módulo Donantes]
+        API --> M3[Módulo Donaciones]
+        API --> M4[Módulo Reportes]
+    end
+    M1 --> DB[(PostgreSQL)]
+    M2 --> DB
+    M3 --> DB
+    M4 --> DB
+```
+
+**Pros:** todo en un proceso (simple) pero con separación clara. Si algún día hace falta microservicios, es fácil extraer un módulo.
+**Cuándo:** proyectos medianos del portafolio con varias áreas de negocio (auth + gestión + reportes).
 
 ---
 
-### 4.1. Frontend React – Estructura pequeña (MVP, 5-10 componentes)
+### 4.3. Cliente-Servidor (SPA + API REST)
 
-Ideal para un proyecto recién empezando, con pocas vistas.
+La arquitectura más común: un frontend (React SPA o App móvil) consume una API REST.
 
+```mermaid
+flowchart LR
+    U[Usuario] --> B[Navegador / App]
+    B --> R[Frontend<br/>React SPA]
+    R -->|HTTPS JSON| API[API Express]
+    API --> DB[(PostgreSQL)]
 ```
-mi-app/
-├── public/
-├── src/
-│   ├── components/        ← componentes reutilizables
-│   │   ├── Boton.jsx
-│   │   ├── Input.jsx
-│   │   └── Navbar.jsx
-│   ├── pages/             ← vistas de ruta
-│   │   ├── Home.jsx
-│   │   ├── Login.jsx
-│   │   └── Dashboard.jsx
-│   ├── hooks/             ← custom hooks
-│   │   └── useAuth.js
-│   ├── services/          ← llamadas a la API
-│   │   └── api.js
-│   ├── App.jsx
-│   └── main.jsx
-├── package.json
-└── vite.config.js
+
+**Con autenticación JWT:**
+
+```mermaid
+sequenceDiagram
+    participant U as Usuario
+    participant R as React
+    participant A as API
+    participant D as DB
+    U->>R: Ingresa credenciales
+    R->>A: POST /auth/login
+    A->>D: SELECT usuario
+    A->>A: bcrypt.compare
+    A-->>R: JWT
+    R->>R: Guarda token
+    R->>A: GET /donantes (Bearer JWT)
+    A-->>R: Lista de donantes
 ```
+
+**Cuándo:** la arquitectura por defecto para apps interactivas, dashboards, apps móviles con backend propio.
 
 ---
 
-### 4.2. Frontend React – Estructura mediana (Feature-based / "by feature")
+### 4.4. Event-Driven (orientada a eventos)
 
-Recomendada para la **mayoría de los portafolios**. Cada funcionalidad tiene su propia carpeta con todo lo que necesita.
+Los componentes se comunican publicando y consumiendo eventos a través de un bus o cola (Redis Pub/Sub, RabbitMQ, MQTT para IoT).
+
+```mermaid
+flowchart LR
+    API[API Express] -->|evento: donacion.creada| BUS[(Redis Pub/Sub)]
+    BUS --> L1[Listener Email]
+    BUS --> L2[Listener Reportes]
+    BUS --> L3[Listener Auditoría]
+```
+
+**Variante IoT con MQTT:**
+
+```mermaid
+flowchart LR
+    S1[Sensor ESP32] -->|MQTT| BR[Broker MQTT]
+    S2[Sensor ESP32] -->|MQTT| BR
+    BR --> API[API Node]
+    API --> DB[(PostgreSQL)]
+    WEB[Dashboard Web] --> API
+```
+
+**Cuándo:** integraciones entre sistemas, procesos asíncronos (envío de correos, generación de reportes pesados), IoT, chat en tiempo real.
+
+---
+
+## 5. Estructura de carpetas recomendada
+
+### 5.1. Frontend React (Vite) – estructura por features
+
+Recomendada para la mayoría de los proyectos del curso.
 
 ```
-mi-app/
+app-web/
 ├── src/
 │   ├── app/
 │   │   ├── App.jsx
 │   │   ├── routes.jsx
-│   │   └── providers.jsx        ← Theme, Auth, QueryClient
-│   ├── shared/                  ← todo lo transversal
-│   │   ├── components/
-│   │   │   ├── Button.jsx
-│   │   │   └── Modal.jsx
-│   │   ├── hooks/
-│   │   │   └── useDebounce.js
-│   │   ├── lib/
-│   │   │   └── api.js           ← axios/fetch configurado
-│   │   ├── utils/
-│   │   │   └── formatters.js
-│   │   └── styles/
-│   │       └── globals.css
-│   ├── features/                ← una carpeta por funcionalidad
+│   │   └── providers.jsx         ← Auth, Theme, QueryClient
+│   ├── shared/
+│   │   ├── components/           ← Boton, Input, Modal...
+│   │   ├── hooks/                ← useDebounce, useFetch
+│   │   ├── lib/                  ← api.js (axios configurado)
+│   │   └── utils/
+│   ├── features/
 │   │   ├── auth/
 │   │   │   ├── components/
-│   │   │   │   └── LoginForm.jsx
-│   │   │   ├── hooks/
-│   │   │   │   └── useAuth.js
-│   │   │   ├── services/
-│   │   │   │   └── authService.js
-│   │   │   └── index.js         ← exports públicos
-│   │   ├── donantes/
-│   │   │   ├── components/
-│   │   │   │   ├── DonanteForm.jsx
-│   │   │   │   └── DonantesTable.jsx
-│   │   │   ├── hooks/
-│   │   │   │   └── useDonantes.js
-│   │   │   ├── services/
-│   │   │   │   └── donantesService.js
-│   │   │   ├── types.js
+│   │   │   ├── hooks/useAuth.js
+│   │   │   ├── services/authService.js
 │   │   │   └── index.js
-│   │   └── reportes/
-│   │       └── …
+│   │   └── donantes/
+│   │       ├── components/
+│   │       ├── hooks/useDonantes.js
+│   │       ├── services/donantesService.js
+│   │       └── index.js
 │   └── main.jsx
 └── package.json
 ```
 
-**Ventaja:** si eliminas una feature, borras una sola carpeta.
+### 5.2. Frontend Next.js (App Router)
 
----
-
-### 4.3. Frontend React – Estructura Atomic Design (con sistema de diseño)
+Si el proyecto necesita SEO o renderizado en servidor.
 
 ```
-src/
-├── components/
-│   ├── atoms/
-│   │   ├── Button/
-│   │   │   ├── Button.jsx
-│   │   │   ├── Button.test.jsx
-│   │   │   └── Button.stories.jsx
-│   │   ├── Input/
-│   │   └── Label/
-│   ├── molecules/
-│   │   ├── FormField/
-│   │   └── SearchBar/
-│   ├── organisms/
-│   │   ├── DonanteForm/
-│   │   └── Navbar/
-│   ├── templates/
-│   │   └── DashboardTemplate.jsx
-│   └── pages/
-│       └── DashboardPage.jsx
-├── hooks/
-├── services/
-└── App.jsx
-```
-
----
-
-### 4.4. Frontend con Next.js (App Router)
-
-```
-mi-app/
+app-web/
 ├── app/
 │   ├── (public)/
-│   │   ├── page.jsx                    ← /
-│   │   └── login/page.jsx              ← /login
+│   │   ├── page.jsx
+│   │   └── login/page.jsx
 │   ├── (dashboard)/
-│   │   ├── layout.jsx                  ← layout compartido protegido
-│   │   ├── donantes/
-│   │   │   ├── page.jsx                ← /donantes
-│   │   │   ├── [rut]/page.jsx          ← /donantes/15274
-│   │   │   └── nuevo/page.jsx          ← /donantes/nuevo
-│   │   └── reportes/page.jsx
-│   ├── api/
+│   │   ├── layout.jsx                    ← protegido
 │   │   └── donantes/
-│   │       ├── route.js                ← GET/POST /api/donantes
-│   │       └── [rut]/route.js          ← GET/DELETE /api/donantes/:rut
-│   ├── layout.jsx
-│   └── globals.css
+│   │       ├── page.jsx
+│   │       └── nuevo/page.jsx
+│   ├── api/donantes/route.js             ← endpoints
+│   └── layout.jsx
 ├── components/
 ├── lib/
-│   ├── db.js
-│   └── auth.js
-├── middleware.js
 └── package.json
 ```
 
----
+### 5.3. Backend Node Express – estructura Layered
 
-### 4.5. Backend Node.js – Estructura pequeña (MVC simple)
-
-Para APIs muy pequeñas o cuando recién se aprende.
-
-```
-api/
-├── src/
-│   ├── routes/
-│   │   └── donantes.routes.js
-│   ├── controllers/
-│   │   └── donantes.controller.js
-│   ├── models/
-│   │   └── donante.model.js
-│   ├── db/
-│   │   └── pool.js
-│   └── index.js
-├── .env
-└── package.json
-```
-
----
-
-### 4.6. Backend Node.js – Estructura mediana (Layered)
-
-**La estructura recomendada para la mayoría de los portafolios.**
+**La recomendada por defecto.**
 
 ```
 api/
@@ -1504,7 +1213,6 @@ api/
 │   │   ├── auth.js
 │   │   ├── errorHandler.js
 │   │   ├── logger.js
-│   │   ├── rateLimit.js
 │   │   └── validate.js
 │   ├── routes/
 │   │   ├── index.js
@@ -1515,16 +1223,13 @@ api/
 │   │   └── auth.controller.js
 │   ├── services/
 │   │   ├── donantes.service.js
-│   │   ├── auth.service.js
-│   │   └── email.service.js
+│   │   └── auth.service.js
 │   ├── repositories/
 │   │   └── donantes.repository.js
 │   ├── dtos/
 │   │   └── donante.dto.js
-│   ├── utils/
-│   │   └── errors.js
-│   ├── app.js              ← configura Express
-│   └── server.js           ← arranca el servidor
+│   ├── app.js
+│   └── server.js
 ├── tests/
 │   ├── unit/
 │   └── integration/
@@ -1534,558 +1239,498 @@ api/
 └── README.md
 ```
 
----
-
-### 4.7. Backend Node.js – Estructura por features
-
-Cuando la API crece y hay muchas áreas de negocio.
-
-```
-api/
-├── src/
-│   ├── config/
-│   ├── shared/
-│   │   ├── middleware/
-│   │   └── utils/
-│   ├── features/
-│   │   ├── donantes/
-│   │   │   ├── donantes.routes.js
-│   │   │   ├── donantes.controller.js
-│   │   │   ├── donantes.service.js
-│   │   │   ├── donantes.repository.js
-│   │   │   ├── donantes.dto.js
-│   │   │   └── donantes.test.js
-│   │   ├── donaciones/
-│   │   │   └── …
-│   │   └── reportes/
-│   │       └── …
-│   ├── app.js
-│   └── server.js
-└── package.json
-```
-
----
-
-### 4.8. Backend Node.js – Estructura Hexagonal / Clean
-
-```
-api/
-├── src/
-│   ├── domain/
-│   │   ├── entities/
-│   │   │   └── Donante.js
-│   │   ├── ports/
-│   │   │   ├── DonanteRepository.js
-│   │   │   └── Notificador.js
-│   │   └── errors.js
-│   ├── application/
-│   │   ├── use-cases/
-│   │   │   ├── RegistrarDonacion.js
-│   │   │   └── ListarDonantes.js
-│   │   └── dtos/
-│   ├── infrastructure/
-│   │   ├── db/
-│   │   │   └── PostgresDonanteRepository.js
-│   │   ├── email/
-│   │   │   └── ResendNotificador.js
-│   │   └── http/
-│   │       ├── express/
-│   │       │   ├── server.js
-│   │       │   ├── routes/
-│   │       │   └── controllers/
-│   │       └── middlewares/
-│   └── main.js                 ← composition root
-└── tests/
-```
-
----
-
-### 4.9. Backend Node.js – Estructura NestJS
-
-```
-api/
-├── src/
-│   ├── modules/
-│   │   ├── donantes/
-│   │   │   ├── dto/
-│   │   │   ├── entities/
-│   │   │   ├── donantes.controller.ts
-│   │   │   ├── donantes.service.ts
-│   │   │   ├── donantes.repository.ts
-│   │   │   └── donantes.module.ts
-│   │   └── auth/
-│   ├── common/
-│   │   ├── guards/
-│   │   ├── interceptors/
-│   │   └── pipes/
-│   ├── app.module.ts
-│   └── main.ts
-└── test/
-```
-
----
-
-### 4.10. Monorepo (frontend + backend)
-
-Cuando quieres frontend y backend en el mismo repositorio. Muy común en proyectos de portafolio.
+### 5.4. Monorepo (frontend + backend en un solo repo)
 
 ```
 mi-proyecto/
 ├── apps/
-│   ├── web/               ← frontend React
-│   │   └── src/…
-│   └── api/               ← backend Node
-│       └── src/…
+│   ├── web/                 ← React/Next.js
+│   └── api/                 ← Node Express
 ├── packages/
-│   ├── types/             ← tipos compartidos
-│   │   └── src/donante.ts
-│   ├── ui/                ← componentes compartidos
+│   ├── types/               ← tipos compartidos
 │   └── utils/
 ├── package.json
-├── turbo.json             ← si usas Turborepo
 └── README.md
 ```
 
 ---
 
-## 5. Patrones de arquitectura de sistema (con diagramas)
+## 6. Plataformas cloud gratuitas (resumen práctico 2025-2026)
 
-A continuación, **múltiples diagramas Mermaid** listos para copiar en tu `ARQUITECTURA.md`.
+| Componente | Plataforma recomendada | Alternativa |
+|---|---|---|
+| **Frontend React** | Vercel | Netlify, Cloudflare Pages |
+| **Frontend estático / blog** | Cloudflare Pages | GitHub Pages, Netlify |
+| **API Node.js** | Render | Railway, Fly.io |
+| **API Serverless** | Vercel Functions | Cloudflare Workers |
+| **PostgreSQL** | Supabase | Neon, Render Postgres |
+| **MySQL** | Railway | PlanetScale (con reservas) |
+| **NoSQL** | Firebase Firestore | MongoDB Atlas |
+| **Redis / Cache / Colas** | Upstash | Railway Redis |
+| **Auth lista para usar** | Supabase Auth | Clerk, Firebase Auth |
+| **Storage de archivos** | Supabase Storage | Cloudflare R2, Cloudinary |
+| **Email transaccional** | Resend (3 000/mes) | SendGrid, Brevo |
+| **CI/CD** | GitHub Actions | GitLab CI |
+| **Monitoreo** | Sentry (free tier) | BetterStack |
+
+### Advertencias importantes
+
+- **Render gratis duerme** los servicios web tras 15 min sin tráfico. La primera request después del sueño demora 30-60 s.
+- **Los free tiers cambian.** Revisa las páginas oficiales antes de decidir.
+- **Evita vendor lock-in extremo.** Firebase Firestore es difícil de migrar; Supabase (PostgreSQL estándar) es más portable.
 
 ---
 
-### 5.1. Monolito clásico
+# PARTE B – RECOMENDACIONES POR GRUPO (2026-01)
 
-Un solo proyecto desplegable con frontend, backend y (a veces) base de datos.
+A continuación, una tarjeta personalizada para cada equipo del curso, con los patrones, la arquitectura y las plataformas sugeridas según la EP1 entregada.
+
+> **Nota:** estas recomendaciones son un punto de partida. El equipo puede ajustarlas siempre que justifique el cambio en su documento de arquitectura.
+
+---
+
+## Grupo 1 – MapacheSecure
+### Sistema móvil gamificado para autorregulación digital
+
+**Tipo de aplicación:** App móvil (control parental) con sincronización cloud.
+
+**Características relevantes de la EP1:**
+- Bloqueo inteligente de apps.
+- Motor de desafíos multimodal (gamificación).
+- Economía de fichas y recompensas.
+- Panel parental.
+- Notificaciones y reportes.
+- Sincronización cloud multi-dispositivo.
+
+### Patrones recomendados
+
+**Frontend móvil (React Native o Flutter):**
+- **Component-Based Architecture** (obvio, es la base).
+- **Custom Hooks + Separación de lógica** para manejar desafíos, fichas, bloqueos. Crea hooks como `useDesafios`, `useFichas`, `useBloqueo`.
+- **State Management con Zustand** (app móvil con mucho estado compartido entre pantallas: puntos actuales, reglas activas, sesión del niño/padre).
+
+**Backend (Node + Express):**
+- **Layered Architecture** (Controller/Service/Repository).
+- **DTO + Validación con Zod** para todas las rutas (especialmente las que envían reglas parentales).
+- **Middleware Pipeline:** auth JWT (el padre autentica en un dispositivo distinto), logger, rate limit.
+- **Repository Pattern:** útil para futuros cambios de BD y para testear la lógica gamificada sin DB real.
+
+### Arquitectura recomendada
+
+**Monolito modular con módulos:** `auth`, `usuarios`, `reglas`, `desafios`, `economia-fichas`, `reportes`, `sync`.
 
 ```mermaid
 flowchart TB
-    U[Usuario] --> W[Aplicación Web Monolítica]
-    W --> DB[(Base de datos)]
+    D1[Dispositivo Niño<br/>React Native]
+    D2[Dispositivo Padre<br/>React Native]
+    D1 -->|HTTPS JSON| API[API Node Express]
+    D2 -->|HTTPS JSON| API
+    subgraph "Backend monolítico modular"
+        API --> AUTH[Módulo Auth]
+        API --> REG[Módulo Reglas]
+        API --> DES[Módulo Desafíos]
+        API --> FIC[Módulo Fichas]
+    end
+    AUTH --> DB[(PostgreSQL)]
+    REG --> DB
+    DES --> DB
+    FIC --> DB
+    API --> PUSH[Firebase Cloud Messaging<br/>Notificaciones push]
 ```
 
-**Versión con frontend y backend en el mismo despliegue (Next.js full-stack):**
+### Plataformas gratuitas sugeridas
+
+| Componente | Plataforma |
+|---|---|
+| App móvil (desarrollo) | Expo + React Native |
+| Backend API | Render o Railway |
+| Base de datos | Supabase (PostgreSQL) |
+| Auth | JWT propio (con bcrypt) o Supabase Auth |
+| Notificaciones push | Firebase Cloud Messaging |
+| Storage (iconos, imágenes) | Supabase Storage |
+
+---
+
+## Grupo 2 – Deckora
+### Aplicación web para la optimización de la experiencia en entornos TCG
+
+**Tipo de aplicación:** Web CRUD con búsqueda, comunidad y organización de torneos.
+
+**Características relevantes de la EP1:**
+- Gestión de colecciones, mazos.
+- Organización y búsqueda de torneos.
+- Visibilidad de tiendas y eventos.
+- Seguimiento de rendimiento.
+
+### Patrones recomendados
+
+**Frontend (React + Vite o Next.js):**
+- **Component-Based + Custom Hooks** para `useColeccion`, `useMazos`, `useTorneos`.
+- **Provider Pattern (Context)** para el usuario autenticado.
+- **SSR con Next.js** si quieren que los torneos y tiendas sean indexables por Google.
+
+**Backend (Node + Express):**
+- **Layered Architecture** completa.
+- **Repository Pattern** (las queries de colecciones y torneos se van a repetir mucho).
+- **DTO + Zod** (inscripciones a torneos, creación de mazos).
+- **Middleware Pipeline** con auth JWT.
+
+### Arquitectura recomendada
+
+**Monolito modular.**
 
 ```mermaid
 flowchart LR
-    U[Usuario] --> CDN[CDN]
-    CDN --> NEXT[Next.js App<br/>React + API Routes]
-    NEXT --> DB[(PostgreSQL)]
+    U[Usuario] --> WEB[Next.js en Vercel]
+    WEB -->|REST| API[API Node en Render]
+    API --> DB[(PostgreSQL<br/>Supabase)]
+    API --> S3[Supabase Storage<br/>imágenes de cartas]
 ```
 
-**Ventajas:** simple, rápido de desarrollar. **Desventajas:** escalar partes por separado es complicado. **Cuándo:** casi siempre para un portafolio.
+### Plataformas gratuitas sugeridas
+
+| Componente | Plataforma |
+|---|---|
+| Frontend | Vercel (Next.js) |
+| Backend | Render |
+| DB | Supabase (PostgreSQL) |
+| Auth | Supabase Auth o JWT propio |
+| Storage imágenes | Supabase Storage o Cloudinary |
 
 ---
 
-### 5.2. Monolito Modular
+## Grupo 3 – NoLimits
+### Plataforma digital para visualización y comparación de contenido multimedia
 
-Un solo despliegue pero internamente dividido en **módulos**.
+**Tipo de aplicación:** Plataforma web tipo agregador / homologador (reseñas, comparaciones).
+
+**Características relevantes de la EP1:**
+- Consolida información multimedia de distintas fuentes.
+- Comparaciones entre plataformas.
+- Reseñas y evaluaciones.
+- Homologación de soluciones.
+
+### Patrones recomendados
+
+**Frontend (Next.js, por SEO):**
+- **Component-Based + Custom Hooks.**
+- **SSR o ISR** (muy importante: un agregador necesita que Google indexe las fichas).
+- **Provider Pattern** para tema y usuario.
+- **Component Composition** intensivo (ficha, tarjeta de reseña, comparador lado a lado).
+
+**Backend (Node + Express):**
+- **Layered Architecture.**
+- **Repository Pattern + Service Layer** con consultas complejas (rankings, comparaciones).
+- **Strategy Pattern (opcional):** si consumen varias APIs externas (IGN, RAWG, IMDB), una estrategia por cada fuente.
+- **Cache en Redis (Upstash)** para resultados de búsqueda frecuentes.
+
+### Arquitectura recomendada
+
+**Cliente-servidor con ISR en el frontend** y API con cache.
+
+```mermaid
+flowchart LR
+    U[Usuario] --> NEXT[Next.js ISR<br/>Vercel]
+    NEXT -->|REST| API[API Node<br/>Render]
+    API --> CACHE[(Upstash Redis)]
+    API --> DB[(PostgreSQL<br/>Supabase)]
+    API -->|fetch| EXT1[API IGN]
+    API -->|fetch| EXT2[API RAWG]
+    API -->|fetch| EXT3[API IMDB]
+```
+
+### Plataformas gratuitas sugeridas
+
+| Componente | Plataforma |
+|---|---|
+| Frontend | Vercel (Next.js con ISR) |
+| Backend | Render |
+| DB | Supabase |
+| Cache | Upstash Redis |
+| Auth | Supabase Auth |
+
+---
+
+## Grupo 4 – 40dB
+### Monitoreo colaborativo de ruido urbano (Municipalidad de Maipú)
+
+**Tipo de aplicación:** Plataforma web con IoT + reportes ciudadanos + dashboard municipal.
+
+**Características relevantes de la EP1:**
+- App web para reporte ciudadano (mic + geolocalización).
+- Prototipo IoT con ESP32 + sensor de sonido.
+- Backend / API REST.
+- Dashboard municipal con heatmap y filtros.
+- Modelo B2G (Business to Government).
+
+### Patrones recomendados
+
+**Frontend (Next.js o Vite + React):**
+- **Component-Based + Custom Hooks** (`useMicrofono`, `useGeolocalizacion`, `useReportes`).
+- **Provider Pattern** para el rol (ciudadano vs municipal).
+- **Libreria de mapas** (Leaflet o Mapbox) en componentes reutilizables; heatmap como organismo.
+
+**Backend (Node + Express):**
+- **Layered Architecture.**
+- **Repository Pattern** con **PostgreSQL + PostGIS** (para queries geoespaciales).
+- **DTO + Zod** para reportes (validar rango de dB, coordenadas válidas).
+- **Event-Driven para IoT:** los ESP32 envían vía **MQTT** a un broker (HiveMQ Cloud gratis), un listener Node ingesta y persiste.
+- **Middleware de auth** diferenciado: anónimo para reportes, JWT municipal para dashboard.
+
+### Arquitectura recomendada
+
+**Cliente-servidor con capa event-driven para IoT.**
 
 ```mermaid
 flowchart TB
-    U[Usuario] --> API[API Express]
-    subgraph Monolito
-        API --> M1[Módulo Donantes]
-        API --> M2[Módulo Donaciones]
-        API --> M3[Módulo Reportes]
-        API --> M4[Módulo Auth]
+    C[Ciudadano<br/>App web] --> API[API Node Express]
+    M[Municipal<br/>Dashboard] --> API
+
+    S1[ESP32 Sensor] -->|MQTT| BR[Broker MQTT<br/>HiveMQ Cloud]
+    S2[ESP32 Sensor] -->|MQTT| BR
+    BR --> ING[Listener Node<br/>ingesta IoT]
+    ING --> API
+
+    API --> DB[(PostgreSQL + PostGIS<br/>Supabase)]
+```
+
+### Plataformas gratuitas sugeridas
+
+| Componente | Plataforma |
+|---|---|
+| Frontend web | Vercel |
+| Backend | Render o Railway |
+| DB geoespacial | Supabase (PostgreSQL con extensión PostGIS) |
+| Broker MQTT | HiveMQ Cloud free tier |
+| Mapas | Leaflet + OpenStreetMap (gratis) |
+
+---
+
+## Grupo 5 – Pop Study
+### Plataforma web para autogestión académica (estudiantes de ed. superior)
+
+**Tipo de aplicación:** Web para gestión académica (apuntes, cálculo de notas, planificación).
+
+**Observación importante:** la EP1 menciona "arquitectura de microservicios". **Recomendación docente: evaluar si es realmente necesario.** Para un equipo de 2 personas y un MVP, un **monolito modular bien diseñado es casi siempre mejor**, y se puede extraer a microservicios después si hace falta. Es mejor defender un monolito bien hecho que microservicios mal implementados.
+
+### Patrones recomendados
+
+**Frontend (React + Vite o Next.js):**
+- **Component-Based + Custom Hooks** (`useCursos`, `useNotas`, `useCalendario`).
+- **State global con Zustand** para el usuario, cursos actuales, configuración.
+- **Component Composition** para dashboard, ramo, evaluación.
+
+**Backend (Node + Express):**
+- **Layered Architecture** con módulos claros (si quieren mantener la visión de microservicios, que los módulos estén muy bien separados para extraerlos después).
+- **Repository Pattern.**
+- **DTO + Zod.**
+- **Service Layer:** la lógica de cálculo de notas, exigencias y proyecciones va aquí.
+
+### Arquitectura recomendada
+
+**Monolito modular** (justificable más fácilmente que microservicios en un MVP).
+
+```mermaid
+flowchart TB
+    U[Estudiante] --> WEB[React SPA<br/>Vercel]
+    WEB --> API[API Node Express<br/>Render]
+    subgraph "Monolito Modular"
+        API --> M1[Módulo Auth]
+        API --> M2[Módulo Cursos]
+        API --> M3[Módulo Notas]
+        API --> M4[Módulo Calendario]
+        API --> M5[Módulo Recursos]
     end
-    M1 --> DB[(PostgreSQL)]
+    M1 --> DB[(PostgreSQL<br/>Supabase)]
     M2 --> DB
     M3 --> DB
     M4 --> DB
+    M5 --> S3[Supabase Storage]
 ```
 
-**Cuándo:** el punto ideal para un portafolio serio. Se puede migrar a microservicios después si hace falta.
+### Plataformas gratuitas sugeridas
+
+| Componente | Plataforma |
+|---|---|
+| Frontend | Vercel |
+| Backend | Render |
+| DB | Supabase |
+| Auth | Supabase Auth (incluye Google/GitHub login) |
+| Storage apuntes | Supabase Storage |
 
 ---
 
-### 5.3. Cliente-Servidor clásico (SPA + API)
+## Grupo 6 – Plataforma web para creación automatizada de Landing Pages con IA
+
+**Tipo de aplicación:** Web + IA para generar HTML/CSS/JS automáticamente.
+
+**Características relevantes de la EP1:**
+- Formulario de captura de info del negocio.
+- Integración con una IA para generar código.
+- Opciones escalonadas de personalización.
+- Democratización para microempresarios.
+
+### Patrones recomendados
+
+**Frontend (React + Vite):**
+- **Component-Based + Custom Hooks** (`useWizard`, `useGeneracion`, `usePreview`).
+- **State global con Zustand** para el wizard multi-paso.
+- **Provider Pattern** para sesión.
+- **Component Composition** para el preview en iframe.
+
+**Backend (Node + Express):**
+- **Layered Architecture.**
+- **Repository Pattern.**
+- **DTO + Zod** (crítico: el prompt de entrada debe ser validado para evitar inyección de prompt).
+- **Strategy Pattern (opcional pero potente):** una estrategia por cada proveedor de IA (OpenAI, Claude, Gemini). Así pueden cambiar sin tocar el resto del código.
+- **Queue pattern:** la generación puede demorar 30+ s. Úsar BullMQ o Upstash QStash para procesamiento asíncrono; el frontend poll-ea o escucha por WebSocket/SSE.
+
+### Arquitectura recomendada
+
+**Cliente-servidor + cola asíncrona.**
 
 ```mermaid
 flowchart LR
-    U[Usuario] --> B[Navegador]
-    B --> R[React SPA<br/>Vercel]
-    R -->|HTTPS JSON| API[API Express<br/>Render]
+    U[Microempresario] --> WEB[React SPA<br/>Vercel]
+    WEB --> API[API Node<br/>Render]
     API --> DB[(PostgreSQL<br/>Supabase)]
+    API --> Q[(Cola<br/>Upstash QStash)]
+    Q --> W[Worker Node]
+    W -->|prompt| IA[API OpenAI/Claude]
+    IA -->|HTML generado| W
+    W --> DB
+    W -->|SSE/polling| WEB
 ```
 
-**Versión con autenticación:**
+### Plataformas gratuitas sugeridas
+
+| Componente | Plataforma |
+|---|---|
+| Frontend | Vercel |
+| Backend | Render |
+| DB | Supabase |
+| Cola | Upstash QStash (gratis con límites) |
+| IA | OpenAI API (créditos iniciales) o Claude API |
+| Hosting de landings generadas | Vercel / Cloudflare Pages (deploy dinámico) |
+
+---
+
+## Grupo 7 – AGENTE X
+### Plataforma web de Inteligencia de Negocios Conversacional (BI) con agentes de IA
+
+**Tipo de aplicación:** Web chat + agentes IA con RAG + consumo de APIs dinámicas.
+
+**Características relevantes de la EP1:**
+- Chat conversacional con agentes IA.
+- RAG (Retrieval Augmented Generation) con documentos privados.
+- Segregación de contexto por agente.
+- Integración con DeepSeek (Python intermediario).
+- Despliegue en VPS propio con Nginx + Node + MySQL + PM2.
+- JWT propio, SSE para estados asíncronos.
+- Proyecto individual (1 persona full-stack).
+
+### Patrones recomendados
+
+**Frontend (React + Vite):**
+- **Component-Based + Custom Hooks** (`useChat`, `useAgente`, `useDocumentos`).
+- **State global con Zustand** para conversaciones y agentes activos.
+- **Provider Pattern** para auth JWT.
+- **SSE (Server-Sent Events)** para mostrar "Consultando BD…", "Leyendo documento…", "Respondiendo…" (ya planificado en la EP1).
+
+**Backend (Node + Express + Python intermediario):**
+- **Layered Architecture** rigurosa (proyecto individual → disciplina estricta).
+- **Repository Pattern** (MySQL — historial, usuarios, agentes, permisos).
+- **DTO + Zod** (chat messages, uploads).
+- **Middleware Pipeline:** auth JWT, logger, rate limit (crítico con IA paga), manejo de uploads (multer).
+- **Strategy Pattern:** cada agente es una estrategia con su propio set de documentos/APIs permitidos.
+- **Factory Pattern:** fabrica la instancia correcta del agente según rol del usuario.
+- **Observer / Event Emitter:** para emitir los estados asíncronos por SSE.
+
+### Arquitectura recomendada
+
+**Cliente-servidor con intermediario Python y SSE.**
 
 ```mermaid
 flowchart LR
-    U[Usuario] --> R[React SPA]
-    R -->|POST /login| API[API Express]
-    API --> DB[(PostgreSQL)]
-    R -->|Bearer token| API
-    R -.->|Guarda JWT| LS[localStorage]
+    U[Ejecutivo] --> NGINX[Nginx<br/>proxy inverso + SSL]
+    NGINX --> WEB[React SPA estática]
+    NGINX -->|/api| NODE[Node + Express<br/>PM2]
+    NODE -->|SSE| WEB
+    NODE -->|HTTP| PY[Servicio Python<br/>RAG + agentes]
+    PY -->|API| IA[DeepSeek API]
+    NODE --> MY[(MySQL local<br/>en el VPS)]
+    PY --> FS[(File System<br/>documentos RAG)]
 ```
+
+### Plataformas gratuitas sugeridas
+
+| Componente | Plataforma |
+|---|---|
+| Hosting | VPS propio (ya definido en la EP1) |
+| Alternativa VPS gratuito | Fly.io free tier (limitado) o Oracle Cloud Always Free |
+| IA | DeepSeek (elegido) |
+| Monitoreo | Sentry free tier |
+| Backup MySQL | Script cron + rclone a Cloudflare R2 (10 GB gratis) |
+
+**Advertencia:** un VPS propio es excelente para aprender, pero recuerden respaldar todo. Si algo falla en producción, no hay proveedor que lo recupere automáticamente.
 
 ---
 
-### 5.4. Arquitectura JAMstack
+## Tabla comparativa rápida de los 7 grupos
 
-Frontend estático que consume APIs.
-
-```mermaid
-flowchart LR
-    U[Usuario] --> CDN[CDN global]
-    CDN --> S[Sitio estático<br/>Astro/Next SSG]
-    S -->|fetch| API1[API pública]
-    S -->|fetch| API2[Supabase]
-    S -->|fetch| API3[Stripe]
-```
-
-**Cuándo:** landings, blogs, documentación, e-commerce ligeros.
-
----
-
-### 5.5. Serverless / Functions as a Service
-
-```mermaid
-flowchart LR
-    U[Usuario] --> R[React en Vercel]
-    R --> F1[Función /api/donantes]
-    R --> F2[Función /api/login]
-    R --> F3[Función /api/reportes]
-    F1 --> DB[(Supabase)]
-    F2 --> DB
-    F3 --> DB
-```
-
-**Ventajas:** costo cero sin tráfico, escala automática. **Desventajas:** cold start, vendor lock-in.
-
----
-
-### 5.6. Microservicios
-
-```mermaid
-flowchart TB
-    U[Usuario] --> GW[API Gateway]
-    GW --> S1[Servicio Usuarios]
-    GW --> S2[Servicio Donantes]
-    GW --> S3[Servicio Pagos]
-    GW --> S4[Servicio Notificaciones]
-    S1 --> DB1[(DB Usuarios)]
-    S2 --> DB2[(DB Donantes)]
-    S3 --> DB3[(DB Pagos)]
-    S4 --> Q[(Cola RabbitMQ)]
-```
-
-**Cuándo:** equipos grandes, escala alta. Rara vez apropiado para un portafolio.
-
----
-
-### 5.7. Event-Driven Architecture
-
-```mermaid
-flowchart LR
-    W[Web] --> API[API]
-    API -->|evento: donacion.creada| BUS[(Message Bus<br/>Redis/RabbitMQ)]
-    BUS --> L1[Listener Email]
-    BUS --> L2[Listener Reportes]
-    BUS --> L3[Listener Métricas]
-    L1 --> MAIL[SMTP]
-    L2 --> DB[(DB Reportes)]
-    L3 --> PROM[Prometheus]
-```
-
----
-
-### 5.8. Real-time / WebSockets
-
-```mermaid
-flowchart LR
-    U1[Usuario A] ---|WebSocket| WS[Servidor Socket.IO]
-    U2[Usuario B] ---|WebSocket| WS
-    U3[Usuario C] ---|WebSocket| WS
-    WS --> DB[(PostgreSQL)]
-    WS --> CACHE[(Redis Pub/Sub)]
-```
-
-**Alternativa con BaaS (Supabase Realtime o Firebase):**
-
-```mermaid
-flowchart LR
-    U1[Usuario A] --> SB[Supabase Realtime]
-    U2[Usuario B] --> SB
-    SB --> DB[(Postgres)]
-```
-
----
-
-### 5.9. BFF (Backend For Frontend)
-
-```mermaid
-flowchart LR
-    WEB[React Web] --> BFF1[BFF Web]
-    APP[App Móvil] --> BFF2[BFF Móvil]
-    BFF1 --> U[Servicio Usuarios]
-    BFF1 --> P[Servicio Pedidos]
-    BFF1 --> N[Servicio Notif.]
-    BFF2 --> U
-    BFF2 --> P
-```
-
----
-
-### 5.10. Microfrontends
-
-```mermaid
-flowchart TB
-    SHELL[Shell / Host App] --> MF1[Microfrontend Catálogo]
-    SHELL --> MF2[Microfrontend Carrito]
-    SHELL --> MF3[Microfrontend Perfil]
-    MF1 --> API1[API Catálogo]
-    MF2 --> API2[API Carrito]
-    MF3 --> API3[API Usuarios]
-```
-
----
-
-### 5.11. Despliegue típico de un portafolio
-
-```mermaid
-flowchart LR
-    DEV[Desarrollador] -->|git push| GH[GitHub]
-    GH -->|webhook| V[Vercel - Build Frontend]
-    GH -->|webhook| R[Render - Build API]
-    V --> CDN[CDN global]
-    U[Usuario] --> CDN
-    U -->|HTTPS| R
-    R --> SB[Supabase - PostgreSQL]
-    R --> SG[Resend - Email]
-```
-
----
-
-### 5.12. Diagrama de secuencia típico (login)
-
-```mermaid
-sequenceDiagram
-    participant U as Usuario
-    participant R as React
-    participant A as API
-    participant D as DB
-    U->>R: Ingresa email/pass
-    R->>A: POST /login
-    A->>D: SELECT usuario
-    D-->>A: Datos del usuario
-    A->>A: bcrypt.compare
-    A-->>R: JWT
-    R->>R: Guarda token
-    R-->>U: Redirige al dashboard
-    U->>R: Navega a /donantes
-    R->>A: GET /donantes (Bearer JWT)
-    A-->>R: Lista de donantes
-    R-->>U: Render de la tabla
-```
-
----
-
-### 5.13. Diagrama C4 de contexto (para el nivel alto del proyecto)
-
-```mermaid
-flowchart TB
-    U1[Donante]
-    U2[Administrador]
-    U1 --> SYS[Sistema de Gestión<br/>de Donaciones]
-    U2 --> SYS
-    SYS --> WP[Webpay]
-    SYS --> EMAIL[Servicio Email]
-    SYS --> SII[SII - API Facturación]
-```
-
----
-
-## 6. Stacks tecnológicos populares
-
-| Stack | Frontend | Backend | DB | Ideal para |
+| Grupo | Proyecto | Tipo | Patrones críticos | Arquitectura |
 |---|---|---|---|---|
-| **MERN** | React | Node + Express | MongoDB | Prototipos, apps CRUD, tiempo real |
-| **MEVN** | Vue | Node + Express | MongoDB | Igual que MERN, con Vue |
-| **MEAN** | Angular | Node + Express | MongoDB | Proyectos grandes con tipado fuerte |
-| **PERN** | React | Node + Express | PostgreSQL | Proyectos con datos relacionales |
-| **Next.js Full-Stack** | Next.js (React) | API Routes Next | PostgreSQL (Neon, Supabase) | Webs modernas con SEO |
-| **T3 Stack** | Next.js + Tailwind | tRPC + Prisma | PostgreSQL | Apps tipadas end-to-end |
-| **Django + React** | React | Django REST Framework | PostgreSQL | Proyectos con mucha lógica de negocio |
-| **Flask/FastAPI + Vue** | Vue | Python | PostgreSQL / SQLite | APIs rápidas, ciencia de datos |
-| **Spring Boot + Angular** | Angular | Java Spring Boot | MySQL / PostgreSQL | Proyectos empresariales |
-| **.NET + React** | React | ASP.NET Core | SQL Server / PostgreSQL | Empresas con ecosistema Microsoft |
-| **Laravel + Livewire** | Blade / Livewire | PHP | MySQL | CRUD administrativos rápidos |
-| **React Native / Flutter + API** | Móvil nativa | Cualquier backend | Cualquiera | Aplicaciones móviles |
+| 1 | MapacheSecure | App móvil | Component, Custom Hooks, Zustand, Layered, DTO | Monolito modular |
+| 2 | Deckora | Web TCG | Component, Custom Hooks, Layered, Repository, DTO | Monolito modular |
+| 3 | NoLimits | Agregador multimedia | SSR/ISR, Component, Strategy, Repository | Cliente-servidor + cache |
+| 4 | 40dB | Web + IoT | Component, Event-Driven (MQTT), Layered, PostGIS | Cliente-servidor + event-driven |
+| 5 | Pop Study | Gestión académica | Component, Zustand, Layered, Repository | Monolito modular (no microservicios) |
+| 6 | Landing Pages IA | Web + IA | Strategy, Queue, Layered, Component, Zustand | Cliente-servidor + cola asíncrona |
+| 7 | AGENTE X | Chat BI con IA | Strategy, Factory, Observer, Layered, SSE, Custom Hooks | Cliente-servidor + intermediario Python |
 
 ---
 
-## 7. Plataformas cloud gratuitas (al 2025-2026)
+# PARTE C – ACTIVIDAD DE LABORATORIO (90 minutos)
 
-> Los límites cambian. Siempre verifica los planes vigentes antes de desplegar.
+## 7. Propósito de la actividad
 
-### 7.1. Frontend / sitios estáticos / JAMstack
+Al finalizar, cada equipo tendrá un documento `ARQUITECTURA.md` en el repositorio con:
 
-| Plataforma | Fuerte en | Capa gratuita (aprox.) | Observaciones |
-|---|---|---|---|
-| **Vercel** | Next.js, React, Vite | 100 GB/mes de ancho, builds ilimitados en proyectos hobby | Ideal para Next.js; incluye Serverless Functions y Edge Functions |
-| **Netlify** | Sitios estáticos, JAMstack | 100 GB/mes, 300 min build | Incluye formularios y Netlify Functions |
-| **Cloudflare Pages** | Sitios estáticos + Workers | 500 builds/mes, ancho ilimitado | Muy rápido, excelente CDN global |
-| **GitHub Pages** | Sitios estáticos puros | Gratis con límites suaves | Perfecto para documentación y portfolios |
-| **Render (Static Sites)** | Sitios estáticos | Gratis con SSL | Muy simple de configurar |
-| **Firebase Hosting** | Sitios + integración Firebase | 10 GB almacenamiento, 360 MB/día | Bueno si ya usas Firebase |
+1. Los patrones frontend y backend justificados.
+2. El diagrama de arquitectura y un diagrama de secuencia.
+3. El stack tecnológico con plataformas de despliegue concretas.
+4. La estructura de carpetas creada en el repo.
+5. Un prototipo mínimo que demuestre la factibilidad técnica.
 
-### 7.2. Backend (APIs, servidores Node, Python, etc.)
-
-| Plataforma | Tipo | Capa gratuita (aprox.) | Notas |
-|---|---|---|---|
-| **Render** | Web services | Servicio gratis que se duerme tras inactividad | Muy usado en proyectos de estudiantes |
-| **Railway** | Contenedores | Crédito mensual gratuito limitado | Excelente DX, deploy desde GitHub |
-| **Fly.io** | VMs / contenedores | Capa gratuita reducida | Potente, despliegue en múltiples regiones |
-| **Vercel Functions** | Serverless | Incluido en plan hobby | Límite de ejecución por función |
-| **Cloudflare Workers** | Edge serverless | 100 000 req/día gratis | Muy baja latencia global |
-| **Netlify Functions** | Serverless | 125 000 invocaciones/mes | Pensado para sitios Netlify |
-| **Deno Deploy** | Edge (TypeScript) | Capa gratuita generosa | Ideal si usas Deno |
-| **Glitch** | Node simple | Proyecto educativo | Ideal para demos, no producción |
-| **Replit** | Multi-lenguaje | Capa gratuita limitada | Bueno para prototipos y clases |
-
-### 7.3. Bases de datos gestionadas
-
-| Plataforma | Tipo | Capa gratuita (aprox.) | Notas |
-|---|---|---|---|
-| **Supabase** | PostgreSQL + Auth + Storage + Realtime | 500 MB DB, 1 GB storage | BaaS muy completo |
-| **Neon** | PostgreSQL serverless | ~0.5 GB | Branching de DB tipo Git |
-| **Aiven for PostgreSQL** | PostgreSQL | Plan de evaluación | Muy estable |
-| **Turso** | SQLite distribuido (libSQL) | Capa gratuita generosa | Perfecto para apps edge |
-| **MongoDB Atlas** | MongoDB | 512 MB cluster gratis | Clásico para MERN |
-| **Firebase Firestore** | NoSQL | 1 GB storage, 50 k lect/día | Excelente tiempo real |
-| **PlanetScale** | MySQL | Plan gratuito limitado | Escalable, serverless |
-| **Upstash Redis** | Redis serverless | 10 000 comandos/día | Ideal para caché y colas |
-| **Railway Postgres/MySQL** | SQL | Incluido en crédito Railway | Simple integración |
-| **Render Postgres** | PostgreSQL | Capa gratuita con expiración | Fácil de conectar |
-| **CockroachDB Serverless** | SQL distribuida | 5 GB storage | Escalable globalmente |
-
-### 7.4. Autenticación y BaaS
-
-| Plataforma | Capacidad | Capa gratuita |
-|---|---|---|
-| **Supabase** | Auth + DB + Storage + Edge Functions | Gratis generoso |
-| **Firebase** | Auth + Firestore + Functions + Hosting | Gratis generoso |
-| **Clerk** | Autenticación lista para usar | Hasta N usuarios gratis |
-| **Auth0** | Autenticación empresarial | 7 500 MAU gratis |
-| **Appwrite** | Open-source BaaS | Self-hosted + plan cloud gratuito |
-| **Pocketbase** | Backend en un solo binario | Gratis, se hostea donde quieras |
-
-### 7.5. Almacenamiento de archivos e imágenes
-
-| Plataforma | Uso | Capa gratuita |
-|---|---|---|
-| **Cloudinary** | Imágenes y video con transformaciones | 25 GB/mes |
-| **Supabase Storage** | Archivos genéricos | 1 GB |
-| **Firebase Storage** | Archivos genéricos | 5 GB |
-| **Cloudflare R2** | Compatible S3 | 10 GB/mes |
-| **Backblaze B2** | Almacenamiento barato | 10 GB |
-
-### 7.6. Otras herramientas para el portafolio
-
-- **GitHub Actions:** CI/CD gratis (2 000 min/mes en repos privados).
-- **Sentry:** monitoreo de errores con plan gratuito.
-- **Uptime Robot / BetterStack:** monitoreo de uptime gratuito.
-- **LogTail / Axiom:** logging gratuito hasta cierto volumen.
-- **n8n cloud / Make / Zapier:** automatizaciones con tier gratuito.
-
----
-
-## 8. Matriz de decisión por tipo de proyecto
-
-| Tipo de proyecto | Patrón frontend | Patrón backend | Arquitectura | Stack sugerido | Despliegue gratuito |
-|---|---|---|---|---|---|
-| **CRUD administrativo interno** | Component-based + Container/Presentational | MVC / Layered | Monolito | React + Express + PostgreSQL | Vercel + Render + Supabase |
-| **Landing / sitio institucional** | SSG | — | JAMstack | Astro o Next.js | Vercel / Netlify / Cloudflare Pages |
-| **E-commerce pequeño** | SSR/ISR | Layered + Repository + Service | Monolito modular | Next.js + Prisma + PostgreSQL | Vercel + Neon/Supabase |
-| **Dashboard de indicadores** | Component-based + Store (Redux/Zustand) | Layered + Repository | Cliente-servidor clásico | React + FastAPI + PostgreSQL | Render + Neon + Vercel |
-| **App móvil con sincronización** | Component-based (RN/Flutter) | BaaS o Layered | Cliente-servidor o BaaS | React Native + Firebase o Supabase | Firebase / Supabase |
-| **Chat o app en tiempo real** | Component-based + WebSockets | Event-driven | Monolito + WebSockets | Node + Socket.IO + Redis o Supabase Realtime | Railway + Upstash Redis |
-| **Plataforma educativa** | SSR + Component-based | Layered + Service | Monolito modular | Next.js + PostgreSQL + Clerk/Supabase Auth | Vercel + Neon |
-| **API pública para terceros** | — | Layered + DTO + Middleware | Monolito o Serverless | FastAPI o NestJS | Render / Fly.io / Railway |
-| **Marketplace de servicios** | SSR/ISR + Store | Layered + Repository + Event-driven | Monolito modular | Next.js + Prisma + PostgreSQL + Redis | Vercel + Supabase + Upstash |
-| **Proyecto con integración IoT** | Component-based | Event-driven + MQTT | Microservicios simples | Node + MQTT broker + InfluxDB | Railway + HiveMQ Cloud |
-| **Blog / documentación técnica** | SSG | — | JAMstack | Astro o Docusaurus | GitHub Pages / Netlify / Cloudflare |
-| **Sistema de reservas / citas** | Component-based + SSR | Layered + Service | Monolito modular | Next.js + PostgreSQL + Auth | Vercel + Supabase |
-
----
-
-## 9. Cómo justificar la elección en el proyecto de portafolio
-
-En la documentación del proyecto debes responder:
-
-1. **¿Qué problema resuelve el sistema?** (una frase clara).
-2. **¿Qué tipo de usuarios lo usarán y cuántos se esperan en el primer año?** (afecta la arquitectura).
-3. **¿Qué patrón frontend y por qué?** (componentes, store, SSR, etc.).
-4. **¿Qué patrón backend y por qué?** (capas, repositorio, service layer).
-5. **¿Qué arquitectura general?** (monolito, modular, serverless).
-6. **¿Qué stack tecnológico?** (lenguaje, framework, DB).
-7. **¿Dónde se desplegará?** (plataforma cloud, costos estimados, alternativas gratuitas).
-8. **¿Qué riesgos tiene la elección?** (limitaciones del free tier, vendor lock-in, aprendizaje).
-9. **¿Cómo se probará y mantendrá?** (tests, logs, monitoreo).
-
-Esta justificación es parte de la rúbrica de evaluación.
-
----
-
-# PARTE B – ACTIVIDAD DE LABORATORIO (90 minutos)
-
----
-
-## 10. Propósito de la actividad
-
-Al finalizar, cada equipo deberá haber **analizado, elegido, justificado y prototipado mínimamente** la arquitectura y el stack de su proyecto de portafolio, incluyendo la plataforma cloud gratuita donde se desplegará.
-
-El entregable es un archivo `ARQUITECTURA.md` dentro del repositorio del proyecto del equipo, acompañado de una pequeña prueba funcional (un "hola mundo" desplegado o una API mínima corriendo en local) y la **estructura de carpetas inicial** ya creada.
-
----
-
-## 11. Organización del tiempo
+## 8. Organización del tiempo
 
 | Bloque | Tiempo | Actividad |
 |---|---|---|
-| 1 | 10 min | Lectura dirigida de la guía y chequeo de proyecto |
-| 2 | 15 min | Análisis del tipo de proyecto y necesidades |
-| 3 | 20 min | Selección y justificación de patrones y arquitectura |
-| 4 | 20 min | Elección de stack, plataforma y creación de la estructura de carpetas |
+| 1 | 10 min | Leer tu tarjeta de grupo (sección 6 de este documento) |
+| 2 | 15 min | Analizar el proyecto: contexto y requisitos |
+| 3 | 20 min | Redactar patrones elegidos, arquitectura y 2 diagramas |
+| 4 | 20 min | Stack, plataformas y creación de la estructura de carpetas |
 | 5 | 15 min | Prototipo mínimo (local o desplegado) |
-| 6 | 10 min | Documentación final y conclusión |
+| 6 | 10 min | Documentación final + commit y push |
 
-**Total: 90 minutos.**
+## 9. Bloque 1 – Leer tu tarjeta de grupo (10 min)
 
----
+Cada equipo debe leer con atención su tarjeta en la Parte B (Grupo 1, 2, 3, 4, 5, 6 o 7). Esa tarjeta es el punto de partida: pueden aceptar las recomendaciones o justificar por qué se apartan.
 
-## 12. Bloque 1 – Lectura dirigida (10 min)
+**Checkpoint 1:** el equipo puede mencionar los patrones recomendados para su proyecto.
 
-Cada equipo debe leer las secciones 2, 3, 4 y 5 de esta guía con el caso de su proyecto en mente.
+## 10. Bloque 2 – Análisis (15 min)
 
-### Checkpoint 1
-
-El equipo debe poder responder, en voz alta:
-
-- ¿qué tipo de aplicación es (web, móvil, API, dashboard)?;
-- ¿cuál es el usuario principal?;
-- ¿qué datos se van a manejar?
-
----
-
-## 13. Bloque 2 – Análisis del proyecto (15 min)
-
-Responde en un archivo nuevo llamado `ARQUITECTURA.md` dentro del repositorio del equipo:
-
-### Plantilla inicial
+Crea un archivo `ARQUITECTURA.md` en el repositorio del proyecto y completa:
 
 ```markdown
-# Arquitectura del Proyecto
+# Arquitectura del Proyecto – [Nombre del proyecto]
 
 ## 1. Contexto
-- **Nombre del proyecto:**
 - **Problema que resuelve:**
 - **Usuarios objetivo:**
-- **Volumen estimado de usuarios en el primer año:**
-- **Tipo de aplicación:** (web / móvil / API / dashboard / otro)
+- **Volumen estimado de usuarios primer año:**
+- **Tipo de aplicación:** (web / móvil / web + IoT / API)
 
 ## 2. Requisitos funcionales clave
 - (3 a 5 bullets)
@@ -2093,241 +1738,174 @@ Responde en un archivo nuevo llamado `ARQUITECTURA.md` dentro del repositorio de
 ## 3. Requisitos no funcionales clave
 - Seguridad:
 - Rendimiento:
-- Escalabilidad esperada:
-- Disponibilidad necesaria:
-- Presupuesto (idealmente $0 en etapa inicial):
+- Escalabilidad:
+- Disponibilidad:
+- Presupuesto (idealmente $0 en MVP):
 ```
 
-### Checkpoint 2
+**Checkpoint 2:** las secciones 1-3 están completas.
 
-El archivo `ARQUITECTURA.md` existe en el repositorio y tiene las secciones 1, 2 y 3 completas.
+## 11. Bloque 3 – Patrones, arquitectura y diagramas (20 min)
 
----
-
-## 14. Bloque 3 – Elección y justificación de patrones (20 min)
-
-Agrega al archivo `ARQUITECTURA.md` lo siguiente, eligiendo **una opción justificada** en cada punto usando las secciones 2, 3 y 5 de esta guía.
+Añade:
 
 ```markdown
-## 4. Patrón de frontend elegido
-- **Patrón:** (p. ej. Component-based + Container/Presentational + Custom Hooks)
-- **Por qué:** (2–3 líneas)
-- **Alternativa descartada:** (y por qué se descartó)
-
-## 5. Patrón de backend elegido
-- **Patrón:** (p. ej. Layered + Repository + Service Layer + DTO)
+## 4. Patrones de frontend
+- **Patrón principal:** (Component-Based + Custom Hooks)
+- **State management:** (Context / Zustand / Redux)
+- **Renderizado:** (CSR / SSR / SSG / ISR)
 - **Por qué:**
-- **Alternativa descartada:**
+
+## 5. Patrones de backend
+- **Arquitectura:** (Layered / MVC)
+- **Repository Pattern:** sí / no – por qué
+- **Validación:** (Zod / Joi)
+- **Otros patrones:** (Strategy, Factory, Observer, Queue, etc.)
+- **Por qué:**
 
 ## 6. Arquitectura general
-- **Estilo:** (monolito / monolito modular / serverless / otro)
-- **Por qué:**
-- **Diagrama:** (ver más abajo)
+- **Estilo:** (monolito / monolito modular / cliente-servidor / event-driven)
+- **Justificación:**
+
+## 7. Diagramas
+
+### 7.1. Arquitectura general
+(Diagrama Mermaid — puedes partir del diagrama de tu tarjeta de grupo y adaptarlo)
+
+### 7.2. Diagrama de secuencia del caso de uso principal
+(Diagrama Mermaid: flujo de una acción clave, por ejemplo "crear donante" o "recibir reporte IoT")
 ```
 
-### Diagramas obligatorios
+**Checkpoint 3:** patrones elegidos, justificados, y los dos diagramas incluidos.
 
-El equipo debe incluir **al menos 2 diagramas Mermaid** en el `ARQUITECTURA.md`:
+## 12. Bloque 4 – Stack, plataformas y carpetas (20 min)
 
-1. **Diagrama de arquitectura general** (similar a los de la sección 5).
-2. **Diagrama de secuencia del caso de uso principal** (similar al 5.12).
-
-### Checkpoint 3
-
-El equipo tiene en `ARQUITECTURA.md`:
-
-- el patrón frontend justificado;
-- el patrón backend justificado;
-- la arquitectura general justificada;
-- los dos diagramas solicitados.
-
----
-
-## 15. Bloque 4 – Stack, plataforma y estructura de carpetas (20 min)
-
-Usando las secciones 4, 6 y 7 de esta guía, agrega al `ARQUITECTURA.md`:
+Añade:
 
 ```markdown
-## 7. Stack tecnológico
+## 8. Stack tecnológico
 - **Lenguaje frontend:**
 - **Framework frontend:**
+- **Librerías clave:** (state, routing, UI)
 - **Lenguaje backend:**
 - **Framework backend:**
+- **Librerías clave:** (ORM, validación, auth)
 - **Base de datos:**
-- **Auth:**
-- **Almacenamiento de archivos (si aplica):**
 
-## 8. Plataforma de despliegue
-| Componente | Plataforma | Por qué | Límites del plan gratuito |
-|---|---|---|---|
-| Frontend | | | |
-| Backend | | | |
-| Base de datos | | | |
-| Auth | | | |
-| Archivos/Imágenes | | | |
+## 9. Plataformas de despliegue
+| Componente | Plataforma | Límites del free tier |
+|---|---|---|
+| Frontend | | |
+| Backend | | |
+| Base de datos | | |
+| Auth | | |
+| Storage/otros | | |
 
-## 9. Estructura de carpetas inicial
-(Pega aquí la estructura de carpetas elegida; basada en la sección 4)
+## 10. Estructura de carpetas creada
+(Pega aquí la estructura elegida — usa la sección 5 como referencia)
 
-## 10. Riesgos de la elección
-- (3 bullets con riesgos reales: ej. "Render gratuito se duerme tras 15 min sin tráfico")
+## 11. Riesgos identificados
+- (3 bullets concretos: ej. "Render duerme tras 15 min, mitigación: ping cada 10 min con cron-job.org")
 ```
 
-### Obligatorio: crear la estructura en el repo
-
-El equipo debe **crear las carpetas reales** según la estructura elegida, aunque todavía estén vacías. Por ejemplo:
+**Obligatorio:** crear las carpetas reales según la estructura (aunque estén vacías):
 
 ```powershell
-# Frontend (React + Vite)
-mkdir mi-app, mi-app\src, mi-app\src\app, mi-app\src\shared, mi-app\src\features
-mkdir mi-app\src\shared\components, mi-app\src\shared\hooks, mi-app\src\shared\lib
-
-# Backend (Node + Express, Layered)
+# Ejemplo para backend Layered en Windows
 mkdir api, api\src, api\src\config, api\src\middleware, api\src\routes
 mkdir api\src\controllers, api\src\services, api\src\repositories, api\src\dtos
 ```
 
-### Checkpoint 4
+**Checkpoint 4:** stack, plataformas, carpetas reales creadas en el repo.
 
-El `ARQUITECTURA.md` tiene stack, plataformas, riesgos y estructura de carpetas, y **las carpetas reales existen en el repositorio**.
+## 13. Bloque 5 – Prototipo mínimo (15 min)
 
----
+Elige **una** opción y demuestra que funciona:
 
-## 16. Bloque 5 – Prototipo mínimo (15 min)
+- **A)** "Hola mundo" del frontend desplegado en Vercel / Netlify / Cloudflare Pages.
+- **B)** API mínima con `/health` y `/items` corriendo en local, probada con `Invoke-RestMethod` o Thunder Client.
+- **C)** Conexión a Supabase o Firebase desde un script mínimo.
+- **D)** End-to-end: frontend mínimo en Vercel + API mínima en Render haciendo fetch.
 
-El equipo debe entregar **una prueba concreta**. Basta con **una** de estas opciones:
+**Checkpoint 5:** evidencia visible (URL pública o captura de pantalla).
 
-### Opción A – "Hola mundo" desplegado (Frontend)
+## 14. Bloque 6 – Cierre, commit y push (10 min)
 
-1. Crear un `index.html` o proyecto Vite + React mínimo.
-2. Desplegarlo en Vercel, Netlify o Cloudflare Pages.
-3. Probar la URL pública.
-
-### Opción B – API mínima corriendo en local (Backend)
-
-1. Levantar una API con dos endpoints: `/health` y `/items` (lista dummy).
-2. Probarla desde Postman, Thunder Client o `Invoke-RestMethod`.
-3. Dejar el código en el repo.
-
-### Opción C – BaaS conectado
-
-1. Crear una tabla en Supabase o Firebase.
-2. Insertar un registro manualmente.
-3. Leer el registro desde un pequeño script frontend.
-
-### Opción D – End-to-end mínimo (ambiciosa)
-
-1. Frontend Vite + React desplegado en Vercel.
-2. Backend Express + "Hello World" desplegado en Render.
-3. El frontend hace fetch al backend y muestra la respuesta.
-
-### Checkpoint 5
-
-Existe una evidencia visible (URL pública o captura de pantalla) que demuestra que la elección tecnológica es factible.
-
----
-
-## 17. Bloque 6 – Documentación final y conclusión (10 min)
-
-Agrega al `ARQUITECTURA.md`:
+Añade al `ARQUITECTURA.md`:
 
 ```markdown
-## 11. Prototipo realizado
-- **Opción elegida:** (A, B, C o D)
-- **Evidencia:** (URL pública o ruta a la captura)
+## 12. Prototipo realizado
+- **Opción:** (A, B, C o D)
+- **Evidencia:** (URL o ruta a captura)
 
-## 12. Próximos pasos
-- (3 bullets concretos)
+## 13. Próximos pasos (3 bullets concretos)
 
-## 13. Reflexión del equipo
+## 14. Reflexión del equipo
 - ¿Qué patrón entendimos mejor durante la actividad?
 - ¿Qué riesgo nos preocupa más y cómo lo vamos a mitigar?
-- ¿Qué necesitamos investigar más antes de avanzar?
+- ¿Qué necesitamos investigar antes de avanzar?
 ```
 
-Finalmente haz `git add`, `commit` y `push` del archivo `ARQUITECTURA.md` y de la estructura de carpetas.
+Y hacer:
 
----
+```bash
+git add .
+git commit -m "docs(arquitectura): documento inicial y estructura de carpetas"
+git push
+```
 
-## 18. Entregables
+## 15. Entregables
 
-Cada equipo debe entregar:
+1. `ARQUITECTURA.md` con las secciones 1-14.
+2. Estructura de carpetas creada en el repo.
+3. **2 diagramas Mermaid mínimo.**
+4. Evidencia del prototipo (URL o captura).
+5. Commit y push hecho por al menos un integrante.
 
-1. El archivo `ARQUITECTURA.md` completo en el repositorio del proyecto.
-2. **Al menos 2 diagramas Mermaid** (arquitectura general + secuencia).
-3. **Estructura de carpetas creada** según la decisión del equipo.
-4. Evidencia del prototipo mínimo (URL pública o captura).
-5. Commit firmado por los integrantes del equipo.
+## 16. Criterios de evaluación
 
----
+| Criterio | Puntaje |
+|---|---|
+| Patrones frontend y backend identificados y justificados | 20 % |
+| Arquitectura coherente con el proyecto | 15 % |
+| Dos diagramas Mermaid claros | 15 % |
+| Plataformas cloud con free tier y límites documentados | 15 % |
+| Estructura de carpetas creada | 10 % |
+| Prototipo mínimo funcionando | 15 % |
+| Identificación de al menos 3 riesgos reales | 10 % |
 
-## 19. Criterios de logro
+## 17. Errores comunes a evitar
 
-El equipo aprueba la actividad si:
+- **Elegir microservicios "porque suena profesional":** un monolito modular bien hecho vale más.
+- **Confundir framework con patrón:** React no es un patrón, es una librería que usa "component-based".
+- **No probar el free tier desde el día uno:** Render cambia límites, Firebase tiene cuotas diarias.
+- **No documentar riesgos:** sin riesgos escritos, la defensa queda débil.
+- **Mezclar responsabilidades:** si el controller hace SQL o el service toca `req`/`res`, perdiste la ventaja del patrón.
+- **Abusar de state management global:** la mayoría del estado debe ser local.
 
-- eligió y justificó un patrón frontend y uno backend;
-- seleccionó una arquitectura coherente con el proyecto;
-- identificó plataformas cloud gratuitas viables para cada componente;
-- creó la estructura de carpetas del proyecto;
-- reconoció al menos 3 riesgos reales de su elección;
-- presentó un prototipo funcional, aunque sea mínimo.
+## 18. Glosario rápido
 
----
-
-## 20. Desafío opcional
-
-Si el equipo termina antes del tiempo, puede sumar cualquiera de estas extensiones:
-
-- **A:** conectar el prototipo local con una base de datos gratuita (Supabase, Neon o Firebase).
-- **B:** agregar un pipeline de CI simple con GitHub Actions que corra `npm test` o `pytest` en cada push.
-- **C:** investigar y agregar una sección sobre **seguridad** (CORS, variables de entorno, manejo de secretos).
-- **D:** preparar un diagrama de componentes C4 nivel 2 (ver ejemplo 5.13 como nivel 1).
-- **E:** implementar un segundo patrón en código dentro del prototipo (por ejemplo, Repository y DTO en el backend).
-
----
-
-## 21. Errores comunes a evitar
-
-- **Elegir microservicios "porque suena profesional".** Un monolito modular bien diseñado es casi siempre mejor para el portafolio.
-- **Usar bases de datos distintas por capricho.** Si no sabes NoSQL, empieza con PostgreSQL.
-- **Depender de un único free tier sin plan B.** Anota siempre una alternativa.
-- **Confundir patrón con framework.** React no es un patrón; el patrón es "component-based". Django no es un patrón; el patrón es MVC.
-- **No documentar la decisión.** Una arquitectura sin justificación no se puede defender en la presentación final.
-- **Mezclar responsabilidades entre capas.** Si tu controller habla con la base de datos, pierde el sentido la arquitectura en capas.
-- **No probar con el free tier desde el día 1.** Muchas plataformas cambian límites; descúbrelo temprano.
-
----
-
-## 22. Glosario rápido
-
-- **API REST:** interfaz web basada en HTTP que permite a un cliente consumir recursos.
-- **BaaS:** Backend as a Service. Servicio que entrega base de datos, auth, storage y funciones listas.
-- **CDN:** Content Delivery Network. Distribuye archivos estáticos cerca del usuario.
+- **BaaS:** Backend as a Service (Supabase, Firebase).
+- **CDN:** red de distribución de contenido.
 - **CI/CD:** Integración y Despliegue Continuos.
-- **Cold start:** retraso al despertar una función serverless que estaba apagada.
-- **DTO:** Data Transfer Object. Estructura de datos que viaja entre capas o servicios.
-- **Free tier:** plan gratuito de una plataforma cloud con límites definidos.
-- **Higher-Order Component (HOC):** función que recibe un componente y devuelve otro con más comportamiento.
-- **JAMstack:** arquitectura basada en JavaScript, APIs y Markup precompilado.
-- **Middleware:** función intermedia que procesa una petición antes o después del controlador.
+- **Cold start:** retraso al despertar un servicio serverless.
+- **DTO:** Data Transfer Object, objeto que viaja entre capas.
+- **Free tier:** plan gratuito con límites.
+- **JAMstack:** JavaScript + APIs + Markup precompilado.
+- **JWT:** JSON Web Token, estándar para autenticación.
+- **MQTT:** protocolo ligero para IoT.
+- **PostGIS:** extensión geoespacial de PostgreSQL.
+- **RAG:** Retrieval-Augmented Generation, técnica de IA.
+- **SSE:** Server-Sent Events, streaming unidireccional servidor → cliente.
 - **SPA:** Single Page Application.
-- **SSR/SSG/CSR/ISR:** estrategias de renderizado.
-- **Vendor lock-in:** dependencia excesiva de un proveedor cloud específico.
 
----
+## 19. Referencias
 
-## 23. Referencias y lecturas recomendadas
+- Fowler, M. *Patterns of Enterprise Application Architecture* (referencia para Layered y Repository).
+- Gamma, E. et al. *Design Patterns* (GoF).
+- Docs oficiales: React, Next.js, Express, Zod, Zustand, Redux Toolkit, Supabase, Vercel, Render.
+- Mermaid Live Editor: https://mermaid.live
 
-- *Patterns of Enterprise Application Architecture* – Martin Fowler.
-- *Clean Architecture* – Robert C. Martin.
-- *Domain-Driven Design Distilled* – Vaughn Vernon.
-- *Refactoring UI* – Adam Wathan & Steve Schoger (para Atomic Design).
-- Documentación oficial de: React, Vue, Angular, Next.js, Express, NestJS, Django, FastAPI, Spring Boot.
-- Documentación oficial de Vercel, Netlify, Render, Railway, Supabase, Firebase, Cloudflare.
-- Mermaid Live Editor: https://mermaid.live (para practicar diagramas).
+## 20. Cierre
 
----
-
-## 24. Cierre
-
-Esta guía no pretende que memorices patrones, sino que aprendas a **elegirlos con criterio**. En la presentación final del proyecto de portafolio, tu equipo deberá **defender** estas decisiones. Si puedes explicar por qué escogiste un monolito modular con Next.js y Supabase en lugar de microservicios con AWS Lambda, y puedes mostrar **cómo se ve ese patrón en tu código React y Node**, habrás cumplido el objetivo de la asignatura.
+Esta guía busca que eligas patrones **con criterio, no por moda**. Lo que la rúbrica del portafolio premia no es la tecnología más nueva, sino la capacidad de explicar **por qué** tu elección resuelve el problema del cliente y **cómo** tu código refleja esa decisión. Tu tarjeta de grupo es el punto de partida: constrúyela, adáptala, justifícala y defiéndela al final del semestre.
