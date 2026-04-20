@@ -16,6 +16,7 @@
 Este material está pensado como **una guía que podrás volver a consultar durante todo el semestre**, no como un listado enciclopédico. Por eso se limita a los patrones más usados en la industria y en los proyectos de la asignatura.
 
 **Parte A – Fundamentos:**
+
 - Por qué existen los patrones (teoría).
 - **4 patrones esenciales de frontend** (con React).
 - **5 patrones esenciales de backend** (con Node.js).
@@ -24,10 +25,12 @@ Este material está pensado como **una guía que podrás volver a consultar dura
 - Plataformas cloud gratuitas.
 
 **Parte B – Recomendación específica para cada grupo del curso 2026-01:**
+
 - Grupo 1 (MapacheSecure), Grupo 2 (Deckora), Grupo 3 (NoLimits), Grupo 4 (40dB), Grupo 5 (Pop Study), Grupo 6 (Generador de Landing Pages con IA), Grupo 7 (AGENTE X).
 - Cada grupo recibe una tarjeta con los patrones que debe aplicar, el diagrama tentativo y las plataformas cloud sugeridas.
 
 **Parte C – Actividad de 90 minutos:**
+
 - Ejercicio guiado para que cada equipo produzca un documento de arquitectura real para su proyecto.
 
 ---
@@ -589,6 +592,7 @@ function ListaDonantes({ donantes, onEliminar }) {
 **Anti-patrón que evita:** **God Component** (un único archivo JSX de 1 000 líneas que pinta toda la pantalla) y **Spaghetti Code** en el frontend. Sin componentes se termina en un "big ball of mud" de HTML + JS acoplados.
 
 **Comparación con patrones similares:**
+
 - *Component-Based vs MVC clásico:* MVC separa Model/View/Controller en capas horizontales; Component-Based divide la UI en piezas verticales autocontenidas. Son complementarios.
 - *Component-Based vs Web Components (estándar W3C):* los Web Components son nativos del navegador y framework-agnósticos; los componentes de React son conceptos de la librería y viven solo dentro de ella.
 
@@ -755,6 +759,7 @@ Siempre que un componente tenga **más de un `useEffect`** o **lógica que se re
 **Anti-patrón que evita:** **Copy-paste programming** (tres componentes con el mismo bloque de fetch), **God Component** (componente que mezcla UI y lógica de negocio) y **Premature Abstraction** si el hook está bien diseñado alrededor de un caso concreto.
 
 **Comparación con patrones similares:**
+
 - *Custom Hook vs HOC (Higher-Order Component):* el HOC envuelve un componente para inyectarle props (`withAuth(Componente)`); el Custom Hook es una función simple que el componente llama (`const auth = useAuth()`). Los hooks son más legibles y componibles, y por eso reemplazaron a los HOCs en React moderno.
 - *Custom Hook vs Render Props:* render props usa una función como hijo (`<DataProvider>{data => ...}</DataProvider>`); los hooks cumplen el mismo fin sin el anidamiento JSX.
 - *Custom Hook vs Service class (backend-style):* ambos encapsulan lógica, pero el hook integra el ciclo de vida de React (re-render, cleanup) y no tiene sentido fuera de un componente.
@@ -905,6 +910,7 @@ Si el estado solo lo necesitan 1-2 componentes cercanos, usar Context o un store
 **Anti-patrón que evita:** **Prop drilling** (pasar la misma prop por 5 componentes intermedios que no la usan) y el **Global Variable anti-pattern** (guardar estado en `window` o variables módulo). Bien usado, también evita **God Component** en componentes de alto nivel que concentrarían todo el estado.
 
 **Comparación con patrones similares:**
+
 - *Context vs Redux:* Context es simple y nativo pero re-renderiza a todos los consumidores en cada cambio; Redux optimiza con selectores y middleware pero añade boilerplate. Context se usa para datos estables (usuario, tema, idioma); Redux para estado grande y cambiante.
 - *Redux vs Zustand:* Redux impone reducer + action + dispatcher; Zustand te deja escribir funciones que llaman a `set` directamente. Zustand gana en brevedad; Redux gana en trazabilidad (DevTools, time-travel).
 - *Provider Pattern vs Singleton:* el Singleton clásico es un objeto único en memoria; el Provider es una jerarquía de componentes React, permite múltiples instancias (ej. dos temas en dos secciones) y respeta la composición.
@@ -999,12 +1005,14 @@ export default async function Catalogo() {
 **Anti-patrón que evita:** **Golden Hammer** (aplicar CSR a todo aunque el sitio sea un blog), **Premature Optimization** (elegir SSR porque "suena rápido" sin medir) y **SEO Invisible** (SPA puras que Google ve como páginas vacías).
 
 **Comparación con patrones similares:**
+
 - *CSR vs SSR:* CSR desplaza el trabajo al navegador; SSR lo concentra en el servidor. CSR es barato de alojar (CDN estático + API); SSR requiere runtime Node en el servidor.
 - *SSR vs SSG:* SSR genera HTML en cada request (dato fresco, más costo por request); SSG lo genera en el build (muy rápido y barato, pero dato "congelado").
 - *SSG vs ISR:* SSG requiere rebuild completo para actualizar; ISR regenera páginas individuales bajo demanda con una ventana de caché.
 - *CSR + React Query vs SSR:* a veces un CSR con React Query y caché agresivo iguala la experiencia del SSR sin la complejidad.
 
 **Cuándo NO usarlo:**
+
 - *CSR:* no usar en landings, blogs o e-commerce donde el SEO es crítico.
 - *SSR:* no usar si las páginas cambian poco (sobrecoste innecesario de computar HTML en cada request).
 - *SSG:* no usar si los datos cambian varias veces por hora; el rebuild es lento.
@@ -1194,6 +1202,7 @@ app.listen(process.env.PORT || 3000, () => console.log('API viva'));
 **Anti-patrón que evita:** **God Object** (un archivo que hace todo), **Spaghetti Code** y **Big Ball of Mud**. Es la primera defensa contra un backend enredado.
 
 **Comparación con patrones similares:**
+
 - *Layered vs MVC:* MVC es la capa superior (cómo hablan Controller, Model, View); Layered añade las subcapas Service y Repository entre Model y Controller. Hoy casi siempre se combinan.
 - *Layered vs Hexagonal / Clean / Onion:* Layered es una pila lineal; Hexagonal (Alistair Cockburn, 2005) y Clean Architecture (Robert C. Martin, 2012) usan anillos concéntricos y puertos/adaptadores para aislar el dominio aún más. Son una evolución natural cuando el negocio se vuelve complejo.
 - *Layered vs Vertical Slice:* Vertical Slice (Jimmy Bogard, 2015) divide por funcionalidad (feature) en lugar de por capa. Es más liviano en proyectos pequeños pero mezcla preocupaciones.
@@ -1280,6 +1289,7 @@ Cuando el backend **renderiza HTML** (proyectos Laravel/Rails-style), o cuando q
 **Anti-patrón que evita:** **Big Ball of Mud** en aplicaciones con UI. Antes de MVC era común mezclar SQL, HTML y lógica en un único script PHP/ASP.
 
 **Comparación con patrones similares:**
+
 - *MVC vs MVP (Model-View-Presenter):* en MVP el Presenter concentra toda la lógica y la View es pasiva (más fácil de testear). Se usa en Android y en apps de escritorio.
 - *MVC vs MVVM (Model-View-ViewModel):* MVVM introduce data binding bidireccional entre View y ViewModel (Vue, Angular, WPF). El ViewModel es un modelo "amigable" para la vista.
 - *MVC vs Layered + REST:* en una API JSON moderna, la "View" se diluye (JSON), el Controller delega en Service, y la lógica de negocio vive en Service. Es lo que se llama comúnmente "MVC adaptado a APIs".
@@ -1375,6 +1385,7 @@ Si tu proyecto es un prototipo pequeño, puedes saltártelo. Pero en un portafol
 **Anti-patrón que evita:** **Hardcoded data access** (SQL salpicado por todo el proyecto), **Vendor Lock-in a nivel de código** (atarse a una librería de base de datos en cada controlador) y **Copy-paste** de consultas.
 
 **Comparación con patrones similares:**
+
 - *Repository vs DAO (Data Access Object):* el DAO es más "bajo nivel": un método por operación SQL (`findById`, `updateColumn`). El Repository es más "domain-oriented": expresa colecciones de objetos del dominio (`findActivos`, `buscarPorMembresiaVigente`). En la práctica, en Node.js muchos proyectos llaman "repository" a lo que técnicamente es un DAO; no es un error grave, pero vale saberlo.
 - *Repository vs Active Record:* en Active Record (Rails, Eloquent) la entidad sabe guardarse a sí misma (`usuario.save()`). El Repository es lo opuesto: la entidad es un objeto "tonto" y el repository hace el trabajo. Active Record es más ágil en proyectos pequeños; Repository escala mejor.
 - *Repository vs ORM directo:* usar Prisma o Sequelize directamente en el controller es técnicamente posible, pero acopla todo al ORM. Envolverlo en un repository aísla ese detalle.
@@ -1477,6 +1488,7 @@ module.exports = (s) => (req, res, next) => {
 **Anti-patrón que evita:** **Primitive Obsession** (pasar objetos sueltos sin tipar), **Inyección SQL / NoSQL** por falta de validación, **Garbage in, garbage out** (guardar datos basura en la base de datos), **God Object** (mandar y recibir un único objeto `data` con todo mezclado).
 
 **Comparación con patrones similares:**
+
 - *DTO vs Entity / Model:* la Entity representa un objeto del dominio con comportamiento y reglas; el DTO es una estructura **plana** sin lógica. Nunca expongas tus entidades completas al cliente: mapea a un DTO.
 - *DTO vs ViewModel:* el ViewModel es la forma del dato pensada específicamente para una vista (con campos derivados, labels listos). El DTO es más neutro, pensado para transporte.
 - *Validación con Zod vs Joi vs class-validator:* Zod deriva tipos TypeScript automáticamente (`z.infer<typeof schema>`); Joi es anterior y funciona en JavaScript puro; class-validator usa decoradores (estilo NestJS / Java).
@@ -1572,6 +1584,7 @@ Siempre. Es parte de cómo Express funciona. La pregunta es **cuáles middleware
 **Anti-patrón que evita:** **Copy-paste programming** (repetir la verificación de token en cada handler), **God Controller** (controller que mezcla auth + validación + negocio + logging), **Cross-Cutting Concerns no manejados** (logs dispersos, auth inconsistente).
 
 **Comparación con patrones similares:**
+
 - *Middleware vs Decorator:* el Decorator (GoF) envuelve un objeto para añadirle comportamiento; el middleware envuelve una petición HTTP. Son primos conceptuales.
 - *Middleware vs Interceptor (Java/.NET):* idéntico en espíritu; la diferencia es cosmética según el framework.
 - *Middleware vs AOP (Aspect-Oriented Programming):* AOP inserta comportamiento transversal en cualquier punto del código (no solo HTTP). Middleware es AOP aplicado al pipeline web.
@@ -1615,6 +1628,7 @@ flowchart LR
 **Origen:** el monolito es la arquitectura "por defecto" desde los inicios del software. El término tomó connotaciones negativas a mediados de los 2010 con la moda de microservicios, pero **Martin Fowler** lo rescató en 2015 con su artículo *MonolithFirst* ("empieza con un monolito"). Empresas como Shopify, Basecamp (DHH) y GitHub defienden públicamente sus monolitos en producción. Stack Overflow corrió durante años como un monolito clásico en .NET atendiendo millones de usuarios.
 
 **Cuándo elegirla:**
+
 - equipos pequeños (1-6 personas);
 - alcance acotado y requerimientos claros;
 - despliegue rápido, presupuesto limitado;
@@ -1622,6 +1636,7 @@ flowchart LR
 - la mayoría de SaaS tempranos (pre-product-market-fit).
 
 **Cuándo evitarla:**
+
 - equipos grandes (>20 desarrolladores trabajando en paralelo) donde el roce sobre un solo repositorio se vuelve doloroso;
 - dominios muy heterogéneos (parte batch, parte real-time, parte ML) que requieren runtimes distintos;
 - necesidad real de escalar módulos de forma independiente (un servicio golpeado 1000x más que el resto).
@@ -1657,12 +1672,14 @@ flowchart TB
 **Origen:** el **Modular Monolith** fue popularizado por Simon Brown (creador del modelo C4) alrededor de 2015 en conferencias como DDD Europe y resumido en su charla *Modular Monoliths*. Está emparentado con *Package by Feature* (Robert C. Martin) y con el estilo de desarrollo de Shopify, que en 2020 publicó *Deconstructing the Monolith: Designing Software that Maximizes Developer Productivity* describiendo cómo operan un monolito Ruby con cientos de desarrolladores.
 
 **Cuándo elegirla:**
+
 - proyecto con varias áreas claramente separables (auth, donantes, donaciones, reportes);
 - equipo mediano (5-15 personas) organizado por módulo;
 - se sospecha que en el futuro podría requerirse extraer microservicios;
 - se quiere una arquitectura limpia sin pagar el precio de microservicios desde el día uno.
 
 **Cuándo evitarla:**
+
 - proyectos muy pequeños (1-2 módulos): la ceremonia de separación aporta poco valor;
 - equipos sin disciplina de fronteras: si nadie respeta los límites entre módulos, vuelve a ser un Big Ball of Mud con carpetas bonitas;
 - dominios donde la comunicación entre módulos debe ser asíncrona real (mejor event-driven).
@@ -1708,17 +1725,20 @@ sequenceDiagram
 **Origen:** el modelo **cliente-servidor** es anterior a la web misma y apareció con sistemas distribuidos en los años 80 (X Window System, 1984; bases de datos cliente/servidor). **REST** (Representational State Transfer) fue definido por Roy Fielding en su tesis doctoral en la Universidad de California, Irvine (2000); es el estilo arquitectónico sobre el que se diseñó HTTP. La variante moderna **SPA (Single Page Application) + REST** se popularizó con Gmail (2004), AngularJS (2010) y explotó con React y Vue a partir de 2013.
 
 **Cuándo elegirla:**
+
 - aplicación interactiva con muchos cambios de pantalla sin recarga (dashboards, CRMs, backoffice);
 - separación clara entre equipo frontend y backend;
 - múltiples clientes (web + iOS + Android + terceros) consumiendo la misma API;
 - arquitectura por defecto para portafolios del curso.
 
 **Cuándo evitarla:**
+
 - sitios muy estáticos orientados a SEO (blog, docs, landings) → prefiere SSG/SSR con JAMstack;
 - aplicaciones offline-first complejas → evalúa PWA o apps nativas;
 - cuando **GraphQL** u otras tecnologías resuelven mejor el problema de n+1 o subconsultas (APIs gráficas complejas).
 
 **Costo oculto:**
+
 - mantener **sincronía de contratos**: si el backend cambia un campo, el frontend se rompe. Se mitiga con tipos compartidos (TypeScript + OpenAPI).
 - gestión de **CORS**, cookies seguras, CSRF y autenticación (JWT vs sesión).
 - duplicación de validación: una vez en el cliente (UX), otra vez en el servidor (seguridad). Ambas son obligatorias.
@@ -1756,6 +1776,7 @@ flowchart LR
 **Origen:** el estilo **event-driven** se remonta al patrón **Observer** (GoF, 1994) y fue formalizado a nivel arquitectónico en *Enterprise Integration Patterns* (Gregor Hohpe & Bobby Woolf, 2003). Kafka (LinkedIn, 2011) lo llevó a escala planetaria. Netflix popularizó la combinación **microservicios + eventos** con su arquitectura reactiva (Adrian Cockcroft, ~2013). El protocolo **MQTT** (IBM, 1999) es el estándar de facto para IoT de bajo consumo.
 
 **Cuándo elegirla:**
+
 - procesos **asíncronos** que no pueden bloquear la respuesta HTTP (envío de emails, generación de PDF, webhooks a terceros);
 - **integración entre sistemas** débilmente acoplados (varios consumidores interesados en el mismo evento);
 - **IoT**: decenas o miles de dispositivos publicando telemetría;
@@ -1763,11 +1784,13 @@ flowchart LR
 - arquitecturas reactivas que deben absorber picos de carga con una cola.
 
 **Cuándo evitarla:**
+
 - flujos request/response simples (el típico "dame la lista de donantes"): no necesitas un bus de eventos;
 - equipos sin experiencia en sistemas distribuidos: la depuración de una cadena de eventos es significativamente más difícil que una llamada HTTP directa;
 - proyectos pequeños donde la **consistencia fuerte** es necesaria (un pago que debe confirmarse sí o sí antes de continuar).
 
 **Costo oculto:**
+
 - **debugging distribuido**: trazar un bug implica seguir un evento por 3-4 servicios y leer logs correlacionados. Se mitiga con OpenTelemetry, correlation IDs y dashboards como Jaeger o Tempo.
 - **entrega "at-least-once"**: la mayoría de brokers no garantizan entrega exacta; tu código debe ser **idempotente** (si procesa el mismo evento dos veces, no debe duplicar efectos).
 - **orden de eventos**: si dos eventos llegan en desorden, el resultado puede ser incorrecto. Herramientas como Kafka ordenan por partición, pero esto impone restricciones.
@@ -2005,634 +2028,3 @@ Los libros y artículos siguientes son la **base intelectual** de esta guía. Un
 - **Si tienes un mes:** agrega *Clean Code* y el catálogo de Refactoring.Guru.
 - **Si tienes un semestre:** agrega *Patterns of Enterprise Application Architecture* y *Fundamentals of Software Architecture*.
 - **A lo largo de la carrera:** el resto, cuando el problema concreto lo pida.
-
----
-
-# PARTE B – RECOMENDACIONES POR GRUPO (2026-01)
-
-A continuación, una tarjeta personalizada para cada equipo del curso, con los patrones, la arquitectura y las plataformas sugeridas según la EP1 entregada.
-
-> **Nota:** estas recomendaciones son un punto de partida. El equipo puede ajustarlas siempre que justifique el cambio en su documento de arquitectura.
-
----
-
-## Grupo 1 – MapacheSecure
-### Sistema móvil gamificado para autorregulación digital
-
-**Tipo de aplicación:** App móvil (control parental) con sincronización cloud.
-
-**Características relevantes de la EP1:**
-- Bloqueo inteligente de apps.
-- Motor de desafíos multimodal (gamificación).
-- Economía de fichas y recompensas.
-- Panel parental.
-- Notificaciones y reportes.
-- Sincronización cloud multi-dispositivo.
-
-### Patrones recomendados
-
-**Frontend móvil (React Native o Flutter):**
-- **Component-Based Architecture** (obvio, es la base).
-- **Custom Hooks + Separación de lógica** para manejar desafíos, fichas, bloqueos. Crea hooks como `useDesafios`, `useFichas`, `useBloqueo`.
-- **State Management con Zustand** (app móvil con mucho estado compartido entre pantallas: puntos actuales, reglas activas, sesión del niño/padre).
-
-**Backend (Node + Express):**
-- **Layered Architecture** (Controller/Service/Repository).
-- **DTO + Validación con Zod** para todas las rutas (especialmente las que envían reglas parentales).
-- **Middleware Pipeline:** auth JWT (el padre autentica en un dispositivo distinto), logger, rate limit.
-- **Repository Pattern:** útil para futuros cambios de BD y para testear la lógica gamificada sin DB real.
-
-### Arquitectura recomendada
-
-**Monolito modular con módulos:** `auth`, `usuarios`, `reglas`, `desafios`, `economia-fichas`, `reportes`, `sync`.
-
-```mermaid
-flowchart TB
-    D1[Dispositivo Niño<br/>React Native]
-    D2[Dispositivo Padre<br/>React Native]
-    D1 -->|HTTPS JSON| API[API Node Express]
-    D2 -->|HTTPS JSON| API
-    subgraph "Backend monolítico modular"
-        API --> AUTH[Módulo Auth]
-        API --> REG[Módulo Reglas]
-        API --> DES[Módulo Desafíos]
-        API --> FIC[Módulo Fichas]
-    end
-    AUTH --> DB[(PostgreSQL)]
-    REG --> DB
-    DES --> DB
-    FIC --> DB
-    API --> PUSH[Firebase Cloud Messaging<br/>Notificaciones push]
-```
-
-### Plataformas gratuitas sugeridas
-
-| Componente | Plataforma |
-|---|---|
-| App móvil (desarrollo) | Expo + React Native |
-| Backend API | Render o Railway |
-| Base de datos | Supabase (PostgreSQL) |
-| Auth | JWT propio (con bcrypt) o Supabase Auth |
-| Notificaciones push | Firebase Cloud Messaging |
-| Storage (iconos, imágenes) | Supabase Storage |
-
----
-
-## Grupo 2 – Deckora
-### Aplicación web para la optimización de la experiencia en entornos TCG
-
-**Tipo de aplicación:** Web CRUD con búsqueda, comunidad y organización de torneos.
-
-**Características relevantes de la EP1:**
-- Gestión de colecciones, mazos.
-- Organización y búsqueda de torneos.
-- Visibilidad de tiendas y eventos.
-- Seguimiento de rendimiento.
-
-### Patrones recomendados
-
-**Frontend (React + Vite o Next.js):**
-- **Component-Based + Custom Hooks** para `useColeccion`, `useMazos`, `useTorneos`.
-- **Provider Pattern (Context)** para el usuario autenticado.
-- **SSR con Next.js** si quieren que los torneos y tiendas sean indexables por Google.
-
-**Backend (Node + Express):**
-- **Layered Architecture** completa.
-- **Repository Pattern** (las queries de colecciones y torneos se van a repetir mucho).
-- **DTO + Zod** (inscripciones a torneos, creación de mazos).
-- **Middleware Pipeline** con auth JWT.
-
-### Arquitectura recomendada
-
-**Monolito modular.**
-
-```mermaid
-flowchart LR
-    U[Usuario] --> WEB[Next.js en Vercel]
-    WEB -->|REST| API[API Node en Render]
-    API --> DB[(PostgreSQL<br/>Supabase)]
-    API --> S3[Supabase Storage<br/>imágenes de cartas]
-```
-
-### Plataformas gratuitas sugeridas
-
-| Componente | Plataforma |
-|---|---|
-| Frontend | Vercel (Next.js) |
-| Backend | Render |
-| DB | Supabase (PostgreSQL) |
-| Auth | Supabase Auth o JWT propio |
-| Storage imágenes | Supabase Storage o Cloudinary |
-
----
-
-## Grupo 3 – NoLimits
-### Plataforma digital para visualización y comparación de contenido multimedia
-
-**Tipo de aplicación:** Plataforma web tipo agregador / homologador (reseñas, comparaciones).
-
-**Características relevantes de la EP1:**
-- Consolida información multimedia de distintas fuentes.
-- Comparaciones entre plataformas.
-- Reseñas y evaluaciones.
-- Homologación de soluciones.
-
-### Patrones recomendados
-
-**Frontend (Next.js, por SEO):**
-- **Component-Based + Custom Hooks.**
-- **SSR o ISR** (muy importante: un agregador necesita que Google indexe las fichas).
-- **Provider Pattern** para tema y usuario.
-- **Component Composition** intensivo (ficha, tarjeta de reseña, comparador lado a lado).
-
-**Backend (Node + Express):**
-- **Layered Architecture.**
-- **Repository Pattern + Service Layer** con consultas complejas (rankings, comparaciones).
-- **Strategy Pattern (opcional):** si consumen varias APIs externas (IGN, RAWG, IMDB), una estrategia por cada fuente.
-- **Cache en Redis (Upstash)** para resultados de búsqueda frecuentes.
-
-### Arquitectura recomendada
-
-**Cliente-servidor con ISR en el frontend** y API con cache.
-
-```mermaid
-flowchart LR
-    U[Usuario] --> NEXT[Next.js ISR<br/>Vercel]
-    NEXT -->|REST| API[API Node<br/>Render]
-    API --> CACHE[(Upstash Redis)]
-    API --> DB[(PostgreSQL<br/>Supabase)]
-    API -->|fetch| EXT1[API IGN]
-    API -->|fetch| EXT2[API RAWG]
-    API -->|fetch| EXT3[API IMDB]
-```
-
-### Plataformas gratuitas sugeridas
-
-| Componente | Plataforma |
-|---|---|
-| Frontend | Vercel (Next.js con ISR) |
-| Backend | Render |
-| DB | Supabase |
-| Cache | Upstash Redis |
-| Auth | Supabase Auth |
-
----
-
-## Grupo 4 – 40dB
-### Monitoreo colaborativo de ruido urbano (Municipalidad de Maipú)
-
-**Tipo de aplicación:** Plataforma web con IoT + reportes ciudadanos + dashboard municipal.
-
-**Características relevantes de la EP1:**
-- App web para reporte ciudadano (mic + geolocalización).
-- Prototipo IoT con ESP32 + sensor de sonido.
-- Backend / API REST.
-- Dashboard municipal con heatmap y filtros.
-- Modelo B2G (Business to Government).
-
-### Patrones recomendados
-
-**Frontend (Next.js o Vite + React):**
-- **Component-Based + Custom Hooks** (`useMicrofono`, `useGeolocalizacion`, `useReportes`).
-- **Provider Pattern** para el rol (ciudadano vs municipal).
-- **Libreria de mapas** (Leaflet o Mapbox) en componentes reutilizables; heatmap como organismo.
-
-**Backend (Node + Express):**
-- **Layered Architecture.**
-- **Repository Pattern** con **PostgreSQL + PostGIS** (para queries geoespaciales).
-- **DTO + Zod** para reportes (validar rango de dB, coordenadas válidas).
-- **Event-Driven para IoT:** los ESP32 envían vía **MQTT** a un broker (HiveMQ Cloud gratis), un listener Node ingesta y persiste.
-- **Middleware de auth** diferenciado: anónimo para reportes, JWT municipal para dashboard.
-
-### Arquitectura recomendada
-
-**Cliente-servidor con capa event-driven para IoT.**
-
-```mermaid
-flowchart TB
-    C[Ciudadano<br/>App web] --> API[API Node Express]
-    M[Municipal<br/>Dashboard] --> API
-
-    S1[ESP32 Sensor] -->|MQTT| BR[Broker MQTT<br/>HiveMQ Cloud]
-    S2[ESP32 Sensor] -->|MQTT| BR
-    BR --> ING[Listener Node<br/>ingesta IoT]
-    ING --> API
-
-    API --> DB[(PostgreSQL + PostGIS<br/>Supabase)]
-```
-
-### Plataformas gratuitas sugeridas
-
-| Componente | Plataforma |
-|---|---|
-| Frontend web | Vercel |
-| Backend | Render o Railway |
-| DB geoespacial | Supabase (PostgreSQL con extensión PostGIS) |
-| Broker MQTT | HiveMQ Cloud free tier |
-| Mapas | Leaflet + OpenStreetMap (gratis) |
-
----
-
-## Grupo 5 – Pop Study
-### Plataforma web para autogestión académica (estudiantes de ed. superior)
-
-**Tipo de aplicación:** Web para gestión académica (apuntes, cálculo de notas, planificación).
-
-**Observación importante:** la EP1 menciona "arquitectura de microservicios". **Recomendación docente: evaluar si es realmente necesario.** Para un equipo de 2 personas y un MVP, un **monolito modular bien diseñado es casi siempre mejor**, y se puede extraer a microservicios después si hace falta. Es mejor defender un monolito bien hecho que microservicios mal implementados.
-
-### Patrones recomendados
-
-**Frontend (React + Vite o Next.js):**
-- **Component-Based + Custom Hooks** (`useCursos`, `useNotas`, `useCalendario`).
-- **State global con Zustand** para el usuario, cursos actuales, configuración.
-- **Component Composition** para dashboard, ramo, evaluación.
-
-**Backend (Node + Express):**
-- **Layered Architecture** con módulos claros (si quieren mantener la visión de microservicios, que los módulos estén muy bien separados para extraerlos después).
-- **Repository Pattern.**
-- **DTO + Zod.**
-- **Service Layer:** la lógica de cálculo de notas, exigencias y proyecciones va aquí.
-
-### Arquitectura recomendada
-
-**Monolito modular** (justificable más fácilmente que microservicios en un MVP).
-
-```mermaid
-flowchart TB
-    U[Estudiante] --> WEB[React SPA<br/>Vercel]
-    WEB --> API[API Node Express<br/>Render]
-    subgraph "Monolito Modular"
-        API --> M1[Módulo Auth]
-        API --> M2[Módulo Cursos]
-        API --> M3[Módulo Notas]
-        API --> M4[Módulo Calendario]
-        API --> M5[Módulo Recursos]
-    end
-    M1 --> DB[(PostgreSQL<br/>Supabase)]
-    M2 --> DB
-    M3 --> DB
-    M4 --> DB
-    M5 --> S3[Supabase Storage]
-```
-
-### Plataformas gratuitas sugeridas
-
-| Componente | Plataforma |
-|---|---|
-| Frontend | Vercel |
-| Backend | Render |
-| DB | Supabase |
-| Auth | Supabase Auth (incluye Google/GitHub login) |
-| Storage apuntes | Supabase Storage |
-
----
-
-## Grupo 6 – Plataforma web para creación automatizada de Landing Pages con IA
-
-**Tipo de aplicación:** Web + IA para generar HTML/CSS/JS automáticamente.
-
-**Características relevantes de la EP1:**
-- Formulario de captura de info del negocio.
-- Integración con una IA para generar código.
-- Opciones escalonadas de personalización.
-- Democratización para microempresarios.
-
-### Patrones recomendados
-
-**Frontend (React + Vite):**
-- **Component-Based + Custom Hooks** (`useWizard`, `useGeneracion`, `usePreview`).
-- **State global con Zustand** para el wizard multi-paso.
-- **Provider Pattern** para sesión.
-- **Component Composition** para el preview en iframe.
-
-**Backend (Node + Express):**
-- **Layered Architecture.**
-- **Repository Pattern.**
-- **DTO + Zod** (crítico: el prompt de entrada debe ser validado para evitar inyección de prompt).
-- **Strategy Pattern (opcional pero potente):** una estrategia por cada proveedor de IA (OpenAI, Claude, Gemini). Así pueden cambiar sin tocar el resto del código.
-- **Queue pattern:** la generación puede demorar 30+ s. Úsar BullMQ o Upstash QStash para procesamiento asíncrono; el frontend poll-ea o escucha por WebSocket/SSE.
-
-### Arquitectura recomendada
-
-**Cliente-servidor + cola asíncrona.**
-
-```mermaid
-flowchart LR
-    U[Microempresario] --> WEB[React SPA<br/>Vercel]
-    WEB --> API[API Node<br/>Render]
-    API --> DB[(PostgreSQL<br/>Supabase)]
-    API --> Q[(Cola<br/>Upstash QStash)]
-    Q --> W[Worker Node]
-    W -->|prompt| IA[API OpenAI/Claude]
-    IA -->|HTML generado| W
-    W --> DB
-    W -->|SSE/polling| WEB
-```
-
-### Plataformas gratuitas sugeridas
-
-| Componente | Plataforma |
-|---|---|
-| Frontend | Vercel |
-| Backend | Render |
-| DB | Supabase |
-| Cola | Upstash QStash (gratis con límites) |
-| IA | OpenAI API (créditos iniciales) o Claude API |
-| Hosting de landings generadas | Vercel / Cloudflare Pages (deploy dinámico) |
-
----
-
-## Grupo 7 – AGENTE X
-### Plataforma web de Inteligencia de Negocios Conversacional (BI) con agentes de IA
-
-**Tipo de aplicación:** Web chat + agentes IA con RAG + consumo de APIs dinámicas.
-
-**Características relevantes de la EP1:**
-- Chat conversacional con agentes IA.
-- RAG (Retrieval Augmented Generation) con documentos privados.
-- Segregación de contexto por agente.
-- Integración con DeepSeek (Python intermediario).
-- Despliegue en VPS propio con Nginx + Node + MySQL + PM2.
-- JWT propio, SSE para estados asíncronos.
-- Proyecto individual (1 persona full-stack).
-
-### Patrones recomendados
-
-**Frontend (React + Vite):**
-- **Component-Based + Custom Hooks** (`useChat`, `useAgente`, `useDocumentos`).
-- **State global con Zustand** para conversaciones y agentes activos.
-- **Provider Pattern** para auth JWT.
-- **SSE (Server-Sent Events)** para mostrar "Consultando BD…", "Leyendo documento…", "Respondiendo…" (ya planificado en la EP1).
-
-**Backend (Node + Express + Python intermediario):**
-- **Layered Architecture** rigurosa (proyecto individual → disciplina estricta).
-- **Repository Pattern** (MySQL — historial, usuarios, agentes, permisos).
-- **DTO + Zod** (chat messages, uploads).
-- **Middleware Pipeline:** auth JWT, logger, rate limit (crítico con IA paga), manejo de uploads (multer).
-- **Strategy Pattern:** cada agente es una estrategia con su propio set de documentos/APIs permitidos.
-- **Factory Pattern:** fabrica la instancia correcta del agente según rol del usuario.
-- **Observer / Event Emitter:** para emitir los estados asíncronos por SSE.
-
-### Arquitectura recomendada
-
-**Cliente-servidor con intermediario Python y SSE.**
-
-```mermaid
-flowchart LR
-    U[Ejecutivo] --> NGINX[Nginx<br/>proxy inverso + SSL]
-    NGINX --> WEB[React SPA estática]
-    NGINX -->|/api| NODE[Node + Express<br/>PM2]
-    NODE -->|SSE| WEB
-    NODE -->|HTTP| PY[Servicio Python<br/>RAG + agentes]
-    PY -->|API| IA[DeepSeek API]
-    NODE --> MY[(MySQL local<br/>en el VPS)]
-    PY --> FS[(File System<br/>documentos RAG)]
-```
-
-### Plataformas gratuitas sugeridas
-
-| Componente | Plataforma |
-|---|---|
-| Hosting | VPS propio (ya definido en la EP1) |
-| Alternativa VPS gratuito | Fly.io free tier (limitado) o Oracle Cloud Always Free |
-| IA | DeepSeek (elegido) |
-| Monitoreo | Sentry free tier |
-| Backup MySQL | Script cron + rclone a Cloudflare R2 (10 GB gratis) |
-
-**Advertencia:** un VPS propio es excelente para aprender, pero recuerden respaldar todo. Si algo falla en producción, no hay proveedor que lo recupere automáticamente.
-
----
-
-## Tabla comparativa rápida de los 7 grupos
-
-| Grupo | Proyecto | Tipo | Patrones críticos | Arquitectura |
-|---|---|---|---|---|
-| 1 | MapacheSecure | App móvil | Component, Custom Hooks, Zustand, Layered, DTO | Monolito modular |
-| 2 | Deckora | Web TCG | Component, Custom Hooks, Layered, Repository, DTO | Monolito modular |
-| 3 | NoLimits | Agregador multimedia | SSR/ISR, Component, Strategy, Repository | Cliente-servidor + cache |
-| 4 | 40dB | Web + IoT | Component, Event-Driven (MQTT), Layered, PostGIS | Cliente-servidor + event-driven |
-| 5 | Pop Study | Gestión académica | Component, Zustand, Layered, Repository | Monolito modular (no microservicios) |
-| 6 | Landing Pages IA | Web + IA | Strategy, Queue, Layered, Component, Zustand | Cliente-servidor + cola asíncrona |
-| 7 | AGENTE X | Chat BI con IA | Strategy, Factory, Observer, Layered, SSE, Custom Hooks | Cliente-servidor + intermediario Python |
-
----
-
-# PARTE C – ACTIVIDAD DE LABORATORIO (90 minutos)
-
-## 7. Propósito de la actividad
-
-Al finalizar, cada equipo tendrá un documento `ARQUITECTURA.md` en el repositorio con:
-
-1. Los patrones frontend y backend justificados.
-2. El diagrama de arquitectura y un diagrama de secuencia.
-3. El stack tecnológico con plataformas de despliegue concretas.
-4. La estructura de carpetas creada en el repo.
-5. Un prototipo mínimo que demuestre la factibilidad técnica.
-
-## 8. Organización del tiempo
-
-| Bloque | Tiempo | Actividad |
-|---|---|---|
-| 1 | 10 min | Leer tu tarjeta de grupo (sección 6 de este documento) |
-| 2 | 15 min | Analizar el proyecto: contexto y requisitos |
-| 3 | 20 min | Redactar patrones elegidos, arquitectura y 2 diagramas |
-| 4 | 20 min | Stack, plataformas y creación de la estructura de carpetas |
-| 5 | 15 min | Prototipo mínimo (local o desplegado) |
-| 6 | 10 min | Documentación final + commit y push |
-
-## 9. Bloque 1 – Leer tu tarjeta de grupo (10 min)
-
-Cada equipo debe leer con atención su tarjeta en la Parte B (Grupo 1, 2, 3, 4, 5, 6 o 7). Esa tarjeta es el punto de partida: pueden aceptar las recomendaciones o justificar por qué se apartan.
-
-**Checkpoint 1:** el equipo puede mencionar los patrones recomendados para su proyecto.
-
-## 10. Bloque 2 – Análisis (15 min)
-
-Crea un archivo `ARQUITECTURA.md` en el repositorio del proyecto y completa:
-
-```markdown
-# Arquitectura del Proyecto – [Nombre del proyecto]
-
-## 1. Contexto
-- **Problema que resuelve:**
-- **Usuarios objetivo:**
-- **Volumen estimado de usuarios primer año:**
-- **Tipo de aplicación:** (web / móvil / web + IoT / API)
-
-## 2. Requisitos funcionales clave
-- (3 a 5 bullets)
-
-## 3. Requisitos no funcionales clave
-- Seguridad:
-- Rendimiento:
-- Escalabilidad:
-- Disponibilidad:
-- Presupuesto (idealmente $0 en MVP):
-```
-
-**Checkpoint 2:** las secciones 1-3 están completas.
-
-## 11. Bloque 3 – Patrones, arquitectura y diagramas (20 min)
-
-Añade:
-
-```markdown
-## 4. Patrones de frontend
-- **Patrón principal:** (Component-Based + Custom Hooks)
-- **State management:** (Context / Zustand / Redux)
-- **Renderizado:** (CSR / SSR / SSG / ISR)
-- **Por qué:**
-
-## 5. Patrones de backend
-- **Arquitectura:** (Layered / MVC)
-- **Repository Pattern:** sí / no – por qué
-- **Validación:** (Zod / Joi)
-- **Otros patrones:** (Strategy, Factory, Observer, Queue, etc.)
-- **Por qué:**
-
-## 6. Arquitectura general
-- **Estilo:** (monolito / monolito modular / cliente-servidor / event-driven)
-- **Justificación:**
-
-## 7. Diagramas
-
-### 7.1. Arquitectura general
-(Diagrama Mermaid — puedes partir del diagrama de tu tarjeta de grupo y adaptarlo)
-
-### 7.2. Diagrama de secuencia del caso de uso principal
-(Diagrama Mermaid: flujo de una acción clave, por ejemplo "crear donante" o "recibir reporte IoT")
-```
-
-**Checkpoint 3:** patrones elegidos, justificados, y los dos diagramas incluidos.
-
-## 12. Bloque 4 – Stack, plataformas y carpetas (20 min)
-
-Añade:
-
-```markdown
-## 8. Stack tecnológico
-- **Lenguaje frontend:**
-- **Framework frontend:**
-- **Librerías clave:** (state, routing, UI)
-- **Lenguaje backend:**
-- **Framework backend:**
-- **Librerías clave:** (ORM, validación, auth)
-- **Base de datos:**
-
-## 9. Plataformas de despliegue
-| Componente | Plataforma | Límites del free tier |
-|---|---|---|
-| Frontend | | |
-| Backend | | |
-| Base de datos | | |
-| Auth | | |
-| Storage/otros | | |
-
-## 10. Estructura de carpetas creada
-(Pega aquí la estructura elegida — usa la sección 5 como referencia)
-
-## 11. Riesgos identificados
-- (3 bullets concretos: ej. "Render duerme tras 15 min, mitigación: ping cada 10 min con cron-job.org")
-```
-
-**Obligatorio:** crear las carpetas reales según la estructura (aunque estén vacías):
-
-```powershell
-# Ejemplo para backend Layered en Windows
-mkdir api, api\src, api\src\config, api\src\middleware, api\src\routes
-mkdir api\src\controllers, api\src\services, api\src\repositories, api\src\dtos
-```
-
-**Checkpoint 4:** stack, plataformas, carpetas reales creadas en el repo.
-
-## 13. Bloque 5 – Prototipo mínimo (15 min)
-
-Elige **una** opción y demuestra que funciona:
-
-- **A)** "Hola mundo" del frontend desplegado en Vercel / Netlify / Cloudflare Pages.
-- **B)** API mínima con `/health` y `/items` corriendo en local, probada con `Invoke-RestMethod` o Thunder Client.
-- **C)** Conexión a Supabase o Firebase desde un script mínimo.
-- **D)** End-to-end: frontend mínimo en Vercel + API mínima en Render haciendo fetch.
-
-**Checkpoint 5:** evidencia visible (URL pública o captura de pantalla).
-
-## 14. Bloque 6 – Cierre, commit y push (10 min)
-
-Añade al `ARQUITECTURA.md`:
-
-```markdown
-## 12. Prototipo realizado
-- **Opción:** (A, B, C o D)
-- **Evidencia:** (URL o ruta a captura)
-
-## 13. Próximos pasos (3 bullets concretos)
-
-## 14. Reflexión del equipo
-- ¿Qué patrón entendimos mejor durante la actividad?
-- ¿Qué riesgo nos preocupa más y cómo lo vamos a mitigar?
-- ¿Qué necesitamos investigar antes de avanzar?
-```
-
-Y hacer:
-
-```bash
-git add .
-git commit -m "docs(arquitectura): documento inicial y estructura de carpetas"
-git push
-```
-
-## 15. Entregables
-
-1. `ARQUITECTURA.md` con las secciones 1-14.
-2. Estructura de carpetas creada en el repo.
-3. **2 diagramas Mermaid mínimo.**
-4. Evidencia del prototipo (URL o captura).
-5. Commit y push hecho por al menos un integrante.
-
-## 16. Criterios de evaluación
-
-| Criterio | Puntaje |
-|---|---|
-| Patrones frontend y backend identificados y justificados | 20 % |
-| Arquitectura coherente con el proyecto | 15 % |
-| Dos diagramas Mermaid claros | 15 % |
-| Plataformas cloud con free tier y límites documentados | 15 % |
-| Estructura de carpetas creada | 10 % |
-| Prototipo mínimo funcionando | 15 % |
-| Identificación de al menos 3 riesgos reales | 10 % |
-
-## 17. Errores comunes a evitar
-
-- **Elegir microservicios "porque suena profesional":** un monolito modular bien hecho vale más.
-- **Confundir framework con patrón:** React no es un patrón, es una librería que usa "component-based".
-- **No probar el free tier desde el día uno:** Render cambia límites, Firebase tiene cuotas diarias.
-- **No documentar riesgos:** sin riesgos escritos, la defensa queda débil.
-- **Mezclar responsabilidades:** si el controller hace SQL o el service toca `req`/`res`, perdiste la ventaja del patrón.
-- **Abusar de state management global:** la mayoría del estado debe ser local.
-
-## 18. Glosario rápido
-
-- **BaaS:** Backend as a Service (Supabase, Firebase).
-- **CDN:** red de distribución de contenido.
-- **CI/CD:** Integración y Despliegue Continuos.
-- **Cold start:** retraso al despertar un servicio serverless.
-- **DTO:** Data Transfer Object, objeto que viaja entre capas.
-- **Free tier:** plan gratuito con límites.
-- **JAMstack:** JavaScript + APIs + Markup precompilado.
-- **JWT:** JSON Web Token, estándar para autenticación.
-- **MQTT:** protocolo ligero para IoT.
-- **PostGIS:** extensión geoespacial de PostgreSQL.
-- **RAG:** Retrieval-Augmented Generation, técnica de IA.
-- **SSE:** Server-Sent Events, streaming unidireccional servidor → cliente.
-- **SPA:** Single Page Application.
-
-## 19. Referencias
-
-- Fowler, M. *Patterns of Enterprise Application Architecture* (referencia para Layered y Repository).
-- Gamma, E. et al. *Design Patterns* (GoF).
-- Docs oficiales: React, Next.js, Express, Zod, Zustand, Redux Toolkit, Supabase, Vercel, Render.
-- Mermaid Live Editor: https://mermaid.live
-
-## 20. Cierre
-
-Esta guía busca que eligas patrones **con criterio, no por moda**. Lo que la rúbrica del portafolio premia no es la tecnología más nueva, sino la capacidad de explicar **por qué** tu elección resuelve el problema del cliente y **cómo** tu código refleja esa decisión. Tu tarjeta de grupo es el punto de partida: constrúyela, adáptala, justifícala y defiéndela al final del semestre.
