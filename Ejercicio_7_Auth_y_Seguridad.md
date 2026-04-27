@@ -102,8 +102,8 @@ Distribuye el trabajo de la siguiente forma:
 - **Bloque 2 – Preparación del entorno y estructura del proyecto:** 15 minutos
 - **Bloque 3 – Registro con bcrypt y login con JWT:** 30 minutos
 - **Bloque 4 – Middleware de autenticación y ruta protegida:** 25 minutos
-- **Bloque 5 – Endurecimiento de seguridad (headers, errores, secretos):** 20 minutos
-- **Bloque 6 – Pruebas, reflexión y cierre:** 15 minutos
+- **Bloque 5 – Endurecimiento de seguridad (headers, roles, errores, secretos):** 25 minutos
+- **Bloque 6 – Pruebas, reflexión y cierre:** 10 minutos
 
 **Tiempo total estimado:** 120 minutos
 
@@ -700,7 +700,159 @@ X-DNS-Prefetch-Control: off
 
 Si por alguna razón no quieres usar `helmet`, puedes setearlos a mano con `app.use((req,res,next)=>{ res.setHeader(...); next(); })`, pero **`helmet` es la opción recomendada**.
 
-### Paso 19. Revisar tu código contra esta checklist de seguridad
+### Paso 19. Manejo seguro de roles (nunca confiar en el cliente)
+
+Una de las trampas más frecuentes en proyectos de estudiantes es **manejar el rol del usuario desde el frontend**: guardar `localStorage.setItem("rol", "admin")`, leer una cookie sin firmar, o aceptar un header tipo `X-User-Role: admin`. **Todo lo que vive en el navegador es manipulable por el usuario en menos de 30 segundos:**
+
+```js
+// El usuario abre DevTools → Console y escribe:
+localStorage.setItem("rol", "admin");
+// O modifica la cookie en DevTools → Application → Cookies
+// O usa una extensión como ModHeader / un proxy para inyectar headers
+```
+
+Si tu backend confía en cualquiera de esas fuentes, **acabas de regalar permisos de administrador**.
+
+#### El principio: una sola fuente de verdad
+
+El rol vive **en la base de datos** (controlado por el servidor) y solo viaja **dentro del JWT firmado**. El backend lo lee únicamente desde `req.usuario.rol`, que el middleware obtuvo verificando la firma del token con `JWT_SECRET`. Cualquier otra fuente se ignora.
+
+| Fuente | ¿Confiable para autorizar? | ¿Para qué sirve? |
+|---|---|---|
+| `req.usuario.rol` (viene del JWT verificado) | **Sí** | Decisiones de seguridad |
+| `localStorage.getItem("rol")` | **No** | Solo UX (mostrar/ocultar botones) |
+| Cookie `rol=admin` sin firmar | **No** | Nada que importe |
+| Header `X-User-Role` | **No** | No tocar |
+| `req.body.rol` en `/register` o `/login` | **No** | Ignorarlo siempre |
+
+#### Mini-demostración del ataque (5 minutos)
+
+Con la API corriendo, intenta saltarte la autorización de tres maneras:
+
+**A. Inyectar el rol como header (debe ser ignorado):**
+
+```bash
+curl http://localhost:3000/api/perfil/admin ^
+  -H "Authorization: Bearer TU_TOKEN_DE_USER" ^
+  -H "X-User-Role: admin"
+```
+
+Resultado esperado: `403 No autorizado`. El header `X-User-Role` no existe para tu middleware; solo se mira `req.usuario.rol` que viene del JWT verificado.
+
+**B. Mandar el rol en el body:**
+
+```bash
+curl -X POST http://localhost:3000/api/perfil/admin ^
+  -H "Authorization: Bearer TU_TOKEN_DE_USER" ^
+  -H "Content-Type: application/json" ^
+  -d "{\"rol\":\"admin\"}"
+```
+
+Resultado esperado: `403`. Tu backend no debe leer el rol del body.
+
+**C. Modificar el JWT cambiando `"rol":"user"` por `"rol":"admin"`:**
+
+Decodifica tu token en [jwt.io](https://jwt.io), edita el payload a mano, copia el resultado y úsalo:
+
+```bash
+curl http://localhost:3000/api/perfil/admin ^
+  -H "Authorization: Bearer TOKEN_MODIFICADO_A_MANO"
+```
+
+Resultado esperado: `401 Token inválido`. La firma deja de coincidir porque el atacante no tiene el `JWT_SECRET`. **Esa es exactamente la garantía que da el JWT firmado.**
+
+#### Bloquear la auto-promoción en `/register`
+
+Antes de seguir, verifica que en tu Paso 7 el endpoint de registro **fuerza** `rol: "user"` y **no acepta** un campo `rol` desde el body. Si tuvieras código como este, sería trivial registrarse como admin:
+
+```js
+// MAL
+const { email, password, nombre, rol } = req.body; // ⚠️ no leer rol del body
+addUsuario({ email, password, nombre, rol: rol || "user" });
+```
+
+```js
+// BIEN — el servidor decide el rol, ignora cualquier intento del cliente
+addUsuario({
+  email, nombre, passwordHash: hash,
+  rol: "user",            // siempre user al registrarse
+  createdAt: new Date().toISOString()
+});
+```
+
+#### Endpoint correcto para cambiar el rol de un usuario
+
+¿Cómo se vuelve admin alguien, entonces? Solo **otro admin** debe poder asignar roles, mediante un endpoint protegido por el middleware `requireRol("admin")`. Crea `src/routes/usuarios.routes.js`:
+
+```js
+const express = require("express");
+const { authMiddleware, requireRol } = require("../middleware/authMiddleware");
+const { readUsuarios, writeUsuarios } = require("../services/usuarios.service");
+
+const router = express.Router();
+const ROLES_PERMITIDOS = ["user", "admin"];
+
+router.patch("/:id/rol", authMiddleware, requireRol("admin"), (req, res) => {
+  const { rol } = req.body;
+
+  if (!ROLES_PERMITIDOS.includes(rol)) {
+    return res.status(400).json({ error: "Rol no válido" });
+  }
+
+  const usuarios = readUsuarios();
+  const objetivo = usuarios.find(u => u.id === Number(req.params.id));
+  if (!objetivo) return res.status(404).json({ error: "Usuario no encontrado" });
+
+  // Evitar que un admin se degrade a sí mismo (riesgo: quedarse sin admins)
+  if (objetivo.id === req.usuario.id && rol !== "admin") {
+    return res.status(400).json({ error: "No puedes degradarte a ti mismo" });
+  }
+
+  objetivo.rol = rol;
+  writeUsuarios(usuarios);
+
+  return res.status(200).json({ id: objetivo.id, email: objetivo.email, rol: objetivo.rol });
+});
+
+module.exports = router;
+```
+
+Expón `writeUsuarios` desde el servicio (en `src/services/usuarios.service.js`):
+
+```js
+module.exports = { readUsuarios, writeUsuarios, findByEmail, addUsuario };
+```
+
+Y registra la ruta en `src/index.js`:
+
+```js
+const usuariosRoutes = require("./routes/usuarios.routes");
+app.use("/api/usuarios", usuariosRoutes);
+```
+
+#### Probar el flujo completo de roles
+
+1. Registra dos usuarios (`admin@test.cl` y `user@test.cl`).
+2. **Detén el servidor** y edita `usuarios.json` a mano: cambia el `rol` del primero a `"admin"`. Vuelve a iniciar el servidor.
+   > Esto solo se hace en el laboratorio. En un proyecto real, el primer admin se crea con un script de bootstrap o una migración, nunca a mano en producción.
+3. Inicia sesión con cada uno y guarda ambos tokens.
+4. Con el **token del user**, intenta `PATCH /api/usuarios/<id-del-user>/rol` con `{ "rol": "admin" }` → debe responder `403`.
+5. Con el **token del admin**, llama al mismo endpoint → debe responder `200` y actualizar el rol.
+6. Vuelve a iniciar sesión con el user (para obtener un token nuevo con el rol actualizado) y prueba `/api/perfil/admin` → ahora debe responder `200`.
+
+> **Detalle clave del paso 6:** el token viejo todavía tiene `rol: "user"` en su payload. El cambio de rol no afecta a tokens ya emitidos hasta que expiren o el usuario vuelva a hacer login. En sistemas reales esto se resuelve con tokens cortos + refresh tokens, o con una lista de revocación.
+
+#### Defensa en profundidad: frontend vs backend
+
+¿Y entonces el frontend nunca puede leer el rol? Sí puede, **pero solo para la UI**: ocultar el botón "Eliminar usuario" si no eres admin, mostrar un menú de administración solo a quien corresponde, etc. Eso es **conveniencia visual, no seguridad**. La regla de oro:
+
+> **Frontend para UX, backend para seguridad.** Toda decisión de seguridad se toma en el servidor. El frontend puede esconder botones, pero el backend debe rechazar la operación si llega.
+
+Una buena forma de leer el rol en el frontend para fines de UI es **decodificar el JWT** (no verificarlo, solo leer el payload con `atob()` o una librería como `jwt-decode`) y usar ese valor para mostrar/ocultar elementos. Pero recuerda: aunque un usuario "se ponga" rol admin en el frontend, el backend lo rechazará en cuanto intente hacer una operación protegida.
+
+> **Verificación intermedia (rol):** demostraste que un header/body con `rol: "admin"` no concede privilegios, que un JWT alterado a mano falla con `401`, y que `/api/usuarios/:id/rol` solo funciona con un token de admin. Este criterio formará parte del Checkpoint 5 al final del bloque.
+
+### Paso 20. Revisar tu código contra esta checklist de seguridad
 
 Marca cada ítem cuando lo hayas verificado en tu código:
 
@@ -714,8 +866,11 @@ Marca cada ítem cuando lo hayas verificado en tu código:
 - [ ] El cuerpo JSON tiene un **límite razonable** (`express.json({ limit: "10kb" })`) para evitar abuso.
 - [ ] Los errores `500` **no exponen** stack traces ni detalles internos al cliente.
 - [ ] `helmet` está activo y devuelve headers de seguridad.
+- [ ] El **rol** del usuario se lee únicamente desde `req.usuario.rol` (proveniente del JWT verificado), nunca desde headers, cookies o `req.body`.
+- [ ] El endpoint de `/register` **no acepta** el campo `rol` desde el cliente; siempre fuerza `rol: "user"`.
+- [ ] Cambiar el rol de un usuario solo es posible mediante un endpoint protegido con `requireRol("admin")`.
 
-### Paso 20. Ejercicio anti-patrones (diagnóstico)
+### Paso 21. Ejercicio anti-patrones (diagnóstico)
 
 Para cada bloque de código siguiente, **identifica el problema** y propón cómo arreglarlo. Anota tus respuestas en tu bitácora.
 
@@ -755,7 +910,22 @@ catch (err) {
 JWT_SECRET=12345
 ```
 
-> Discusión sugerida (5 min con tu pareja o el grupo): ¿qué tienen en común estos errores? ¿En qué punto del flujo (almacenamiento, transmisión, manejo de errores, secretos) ocurre cada uno?
+**F.**
+
+```js
+// En /register
+const { email, password, nombre, rol } = req.body;
+addUsuario({ email, password, nombre, rol: rol || "user" });
+
+// En el middleware de admin
+function requireAdmin(req, res, next) {
+  const rolDelHeader = req.headers["x-user-role"];
+  if (rolDelHeader !== "admin") return res.status(403).json({ error: "no" });
+  next();
+}
+```
+
+> Discusión sugerida (5 min con tu pareja o el grupo): ¿qué tienen en común estos errores? ¿En qué punto del flujo (almacenamiento, transmisión, manejo de errores, secretos, fuentes de verdad para autorización) ocurre cada uno?
 
 **Respuestas resumidas (consúltalas solo después de intentarlo):**
 
@@ -764,14 +934,15 @@ B. Filtra si el email está o no registrado (oracle de enumeración). *Fix:* men
 C. Mete el hash en el payload del JWT (que es legible) y usa un secreto débil hardcodeado. *Fix:* claims mínimos (`sub`, `email`, `rol`) y secreto largo desde `.env`.
 D. Devuelve el stack trace al cliente, dándole pistas a un atacante. *Fix:* loggear en servidor, devolver mensaje genérico.
 E. Secretos en el repositorio. *Fix:* `.env` en `.gitignore`, secreto largo y aleatorio, rotar si se filtró.
+F. Acepta el rol desde el body en `/register` y lee el rol desde un header HTTP. Cualquier usuario puede registrarse como admin o auto-promoverse con una extensión de Chrome. *Fix:* nunca leer rol del cliente; forzar `rol: "user"` en `/register` y leer el rol solo desde `req.usuario.rol` (proveniente del JWT verificado).
 
-**Checkpoint 5 aprobado** cuando completaste la checklist y puedes explicar al menos 3 de los 5 anti-patrones.
+**Checkpoint 5 aprobado** cuando completaste la checklist, demostraste el manejo seguro de roles del Paso 19 y puedes explicar al menos 3 de los 6 anti-patrones.
 
 ---
 
 ## Bloque 6 – Pruebas, reflexión y cierre (15 minutos)
 
-### Paso 21. Plan de pruebas registrado
+### Paso 22. Plan de pruebas registrado
 
 Registra tus pruebas en una tabla así:
 
@@ -787,8 +958,13 @@ Registra tus pruebas en una tabla así:
 | P8 | GET `/api/perfil` token alterado | una letra cambiada | 401 | | |
 | P9 | GET `/api/perfil/admin` con rol user | token rol user | 403 | | |
 | P10 | Headers de seguridad | curl -i /health | helmet headers presentes | | |
+| P11 | Inyección de rol por header | Bearer user + `X-User-Role: admin` en `/api/perfil/admin` | 403 (header ignorado) | | |
+| P12 | JWT alterado a mano | payload modificado a `rol: admin` | 401 token inválido | | |
+| P13 | Auto-promoción en register | POST `/register` con `{ "rol": "admin" }` | usuario creado con rol `user` | | |
+| P14 | Cambio de rol como user | PATCH `/api/usuarios/:id/rol` con token user | 403 | | |
+| P15 | Cambio de rol como admin | PATCH `/api/usuarios/:id/rol` con token admin | 200 | | |
 
-### Paso 22. Preguntas de reflexión (responder en `REFLEXION.md` o al final de tu bitácora)
+### Paso 23. Preguntas de reflexión (responder en `REFLEXION.md` o al final de tu bitácora)
 
 1. ¿Cuál es la diferencia práctica entre **autenticación** y **autorización** en tu propio proyecto del portafolio? Da un ejemplo concreto de cada una.
 2. Si alguien obtiene acceso al archivo `usuarios.json`, ¿puede usar las contraseñas de los usuarios? ¿Por qué sí o por qué no?
@@ -796,9 +972,10 @@ Registra tus pruebas en una tabla así:
 4. ¿Por qué el JWT incluye `expiresIn`? ¿Qué problema tendría un token sin expiración?
 5. ¿Por qué el endpoint de login devuelve "Credenciales inválidas" en vez de "El usuario no existe"?
 6. Identifica **un riesgo de seguridad** que aún tendría tu API si la pusieras en producción tal cual. (Pista: rate limiting, HTTPS, refresh tokens, almacenamiento del token en el frontend, CORS, etc.)
-7. ¿Cómo aplicarías lo que aprendiste hoy a tu proyecto del portafolio? Nombra al menos dos rutas que deberían estar protegidas.
+7. **Manejo de roles:** imagina que un compañero diseña su app guardando el rol del usuario en `localStorage.setItem("rol", "admin")` y en el backend lo lee con `req.headers["x-user-role"]`. Describe paso a paso cómo un usuario común podría obtener acceso de admin en menos de un minuto. ¿Qué cambia si el rol se lee del JWT firmado con un secreto fuerte? ¿Por qué el frontend sí puede leer el rol para fines de UX sin que eso comprometa la seguridad?
+8. ¿Cómo aplicarías lo que aprendiste hoy a tu proyecto del portafolio? Nombra al menos dos rutas que deberían estar protegidas y al menos una que deba requerir rol `admin`.
 
-### Paso 23. Cierre
+### Paso 24. Cierre
 
 Escribe un párrafo breve respondiendo:
 
@@ -825,6 +1002,8 @@ Cada estudiante o equipo debe entregar:
 - captura de `usuarios.json` mostrando el `passwordHash`;
 - captura de `/api/perfil` con token (`200`) y sin token (`401`);
 - captura de `/api/perfil/admin` con rol `user` (`403`);
+- captura del intento de inyectar el rol con el header `X-User-Role: admin` (debe seguir devolviendo `403`);
+- captura del cambio de rol vía `PATCH /api/usuarios/:id/rol` (rechazo con token user, éxito con token admin);
 - captura de `curl -i /health` mostrando los headers de helmet;
 - tabla del plan de pruebas completada;
 - archivo `REFLEXION.md` con las respuestas;
@@ -896,6 +1075,10 @@ Reemplaza `usuarios.json` por una tabla `usuarios` en Supabase con las columnas 
 - Debe emitir un JWT firmado con un secreto desde `.env`
 - Debe proteger `/api/perfil` con un middleware
 - Debe diferenciar 401 (no autenticado) de 403 (no autorizado)
+- Debe leer el rol **únicamente** desde el JWT verificado (`req.usuario.rol`)
+- **No** debe leer el rol desde headers, cookies o `req.body`
+- En `/register`, **debe forzar** `rol: "user"` ignorando cualquier valor enviado por el cliente
+- Cambiar el rol de un usuario solo es posible mediante un endpoint `requireRol("admin")`
 - Debe activar `helmet`
 - **No** debe exponer stack traces, hashes ni el `JWT_SECRET`
 - **No** debe commitear `.env`
