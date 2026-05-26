@@ -981,7 +981,320 @@ Se espera que el estudiante:
 
 ---
 
-## 11. Desafío opcional para quienes terminen antes
+## 11. Desafío de extensión — Agrega tu propia función y aplícale los 7 tipos de prueba
+
+Hasta aquí seguiste una guía paso a paso. Este desafío sube el nivel: **debes diseñar y agregar tu propia función nueva a la API**, y luego escribir **al menos una prueba de cada uno de los 7 tipos** para esa función. Es lo que vas a tener que hacer en tu proyecto de portafolio, así que aprovecha.
+
+> **Por qué este desafío vale:** en tu defensa nadie te va a preguntar por la función `crear` de tareas. Te van a preguntar por algo que **diseñaste tú**. Mostrar que puedes probar tu propio código con todos los tipos de prueba es exactamente la habilidad que se evalúa.
+
+---
+
+### 11.1 Ejemplo guiado — función "duplicar tarea"
+
+Para que veas cómo se hace de punta a punta, agregamos juntos una función nueva: **duplicar una tarea existente**. La copia debe:
+
+- recibir el `id` de la tarea original;
+- generar un nuevo `id` autoincremental;
+- agregar el sufijo `(copia)` al título, o incrementar a `(copia 2)`, `(copia 3)`, etc., si ya termina en `(copia)`;
+- mantener la **prioridad** del original;
+- nacer siempre como **pendiente** (aunque la original esté completada);
+- responder `404` si la tarea original no existe.
+
+#### Paso E1 — Función pura — `src/utils/copia.js`
+
+```js
+function generarTituloDeCopia(tituloOriginal) {
+  if (typeof tituloOriginal !== "string") return null;
+  const limpio = tituloOriginal.trim();
+  if (limpio.length === 0) return null;
+
+  const match = limpio.match(/^(.*)\s\(copia(?:\s(\d+))?\)$/);
+  if (match) {
+    const base = match[1];
+    const n = match[2] ? parseInt(match[2], 10) + 1 : 2;
+    return `${base} (copia ${n})`;
+  }
+  return `${limpio} (copia)`;
+}
+
+module.exports = { generarTituloDeCopia };
+```
+
+#### Paso E2 — Agrega `duplicar` al servicio
+
+En `src/services/tareas.service.js`, agrega al inicio:
+
+```js
+const { generarTituloDeCopia } = require("../utils/copia");
+```
+
+Y antes del `module.exports`:
+
+```js
+function duplicar(id) {
+  const original = obtener(id);
+  if (!original) return null;
+  const copia = {
+    id: siguienteId++,
+    titulo: generarTituloDeCopia(original.titulo),
+    prioridad: original.prioridad,
+    completada: false,
+    creadaEn: new Date().toISOString()
+  };
+  tareas.push(copia);
+  return copia;
+}
+```
+
+Y expórtala en el `module.exports`:
+
+```js
+module.exports = {
+  reset, listar, obtener, crear, actualizarEstado, eliminar, duplicar
+};
+```
+
+#### Paso E3 — Agrega la ruta
+
+En `src/routes/tareas.routes.js`, agrega **antes** del `router.put`:
+
+```js
+router.post("/:id/duplicar", (req, res) => {
+  const copia = servicio.duplicar(req.params.id);
+  if (!copia) return res.status(404).json({ error: "Tarea no encontrada" });
+  res.status(201).json(copia);
+});
+```
+
+#### Paso E4 — Los 7 tests para tu función nueva
+
+Aquí está el patrón completo. Crea estos 6 archivos (la prueba de carga va en el `loadtest.js` global, no en un test Jest).
+
+##### Unitaria — `tests/desafio.unit.copia.test.js`
+
+```js
+const { generarTituloDeCopia } = require("../src/utils/copia");
+
+describe("Desafío Unitario - generarTituloDeCopia", () => {
+  test("agrega sufijo (copia) a un título simple", () => {
+    expect(generarTituloDeCopia("Comprar leche")).toBe("Comprar leche (copia)");
+  });
+
+  test("incrementa a (copia 2) si ya tenía (copia)", () => {
+    expect(generarTituloDeCopia("Comprar leche (copia)")).toBe("Comprar leche (copia 2)");
+  });
+
+  test("incrementa el número si ya tenía (copia N)", () => {
+    expect(generarTituloDeCopia("Tarea (copia 5)")).toBe("Tarea (copia 6)");
+  });
+
+  test("devuelve null para valores no string o vacíos", () => {
+    expect(generarTituloDeCopia(null)).toBeNull();
+    expect(generarTituloDeCopia("   ")).toBeNull();
+  });
+});
+```
+
+##### Humo — `tests/desafio.smoke.copia.test.js`
+
+```js
+const request = require("supertest");
+const app = require("../src/app");
+
+describe("Desafío Smoke - endpoint duplicar existe", () => {
+  test("POST a /api/tareas/:id/duplicar con id inexistente responde 404 controlado", async () => {
+    const res = await request(app).post("/api/tareas/9999/duplicar");
+    expect(res.status).toBe(404);
+    expect(res.body.error).toBeDefined();
+  });
+});
+```
+
+##### Integración — `tests/desafio.integration.copia.test.js`
+
+```js
+const request = require("supertest");
+const app = require("../src/app");
+const servicio = require("../src/services/tareas.service");
+
+describe("Desafío Integración - duplicar conecta ruta + servicio + util", () => {
+  beforeEach(() => servicio.reset());
+
+  test("duplicar persiste la copia y mantiene la prioridad", async () => {
+    servicio.crear({ titulo: "Original", prioridad: "alta" });
+    const res = await request(app).post("/api/tareas/1/duplicar");
+
+    expect(res.status).toBe(201);
+    expect(res.body.id).toBe(2);
+    expect(res.body.prioridad).toBe("alta");
+    expect(res.body.titulo).toBe("Original (copia)");
+    expect(servicio.listar()).toHaveLength(2);
+  });
+});
+```
+
+##### E2E / Funcional — `tests/desafio.e2e.copia.test.js`
+
+```js
+const request = require("supertest");
+const app = require("../src/app");
+const servicio = require("../src/services/tareas.service");
+
+describe("Desafío E2E - flujo crear + duplicar + listar + limpiar", () => {
+  beforeAll(() => servicio.reset());
+
+  test("usuario crea una tarea, la duplica dos veces y limpia todo", async () => {
+    let res = await request(app).post("/api/tareas").send({ titulo: "Plan semanal", prioridad: "media" });
+    expect(res.status).toBe(201);
+
+    res = await request(app).post("/api/tareas/1/duplicar");
+    expect(res.status).toBe(201);
+    expect(res.body.titulo).toBe("Plan semanal (copia)");
+
+    res = await request(app).post("/api/tareas/2/duplicar");
+    expect(res.status).toBe(201);
+    expect(res.body.titulo).toBe("Plan semanal (copia 2)");
+
+    res = await request(app).get("/api/tareas");
+    expect(res.body).toHaveLength(3);
+
+    for (const t of res.body) {
+      const del = await request(app).delete(`/api/tareas/${t.id}`);
+      expect(del.status).toBe(204);
+    }
+  });
+});
+```
+
+##### Regresión — `tests/desafio.regression.copia.test.js`
+
+```js
+const request = require("supertest");
+const app = require("../src/app");
+const servicio = require("../src/services/tareas.service");
+
+/**
+ * Regresión BUG-D-001:
+ * Bug histórico: al duplicar una tarea ya completada, la copia
+ * heredaba completada=true. Debe iniciar siempre como pendiente.
+ */
+describe("Desafío Regresión - BUG-D-001 copia siempre pendiente", () => {
+  beforeEach(() => servicio.reset());
+
+  test("la copia de una tarea completada nace como pendiente", async () => {
+    servicio.crear({ titulo: "Cerrada", prioridad: "media" });
+    servicio.actualizarEstado(1, true);
+
+    const res = await request(app).post("/api/tareas/1/duplicar");
+    expect(res.status).toBe(201);
+    expect(res.body.completada).toBe(false);
+  });
+});
+```
+
+##### Seguridad — `tests/desafio.security.copia.test.js`
+
+```js
+const request = require("supertest");
+const app = require("../src/app");
+const servicio = require("../src/services/tareas.service");
+
+describe("Desafío Seguridad - duplicar valida entrada", () => {
+  beforeEach(() => servicio.reset());
+
+  test("id no numérico responde 404, no rompe", async () => {
+    const res = await request(app).post("/api/tareas/abc/duplicar");
+    expect(res.status).toBe(404);
+  });
+
+  test("id con payload de inyección no afecta", async () => {
+    const res = await request(app).post("/api/tareas/1;DROP%20TABLE/duplicar");
+    expect([404, 400]).toContain(res.status);
+  });
+
+  test("id negativo o cero responde 404", async () => {
+    const r1 = await request(app).post("/api/tareas/0/duplicar");
+    const r2 = await request(app).post("/api/tareas/-1/duplicar");
+    expect(r1.status).toBe(404);
+    expect(r2.status).toBe(404);
+  });
+});
+```
+
+##### Carga — extender `loadtest.js`
+
+Agrega un escenario que también golpee el endpoint nuevo:
+
+```js
+// dentro de export default function ()
+const resDup = http.post("http://localhost:3000/api/tareas/1/duplicar");
+check(resDup, { "duplicar 201 o 404": (r) => [201, 404].includes(r.status) });
+```
+
+> Nota: como la API parte vacía, lo normal es que `duplicar` devuelva `404` la mayoría de las requests del load test. Lo importante aquí es **medir latencia y error rate del endpoint nuevo**, no necesariamente que duplique algo real.
+
+#### Paso E5 — Ejecutar todo
+
+```powershell
+npm test
+```
+
+Esto debe correr los **6 tests base** + los **6 archivos del desafío** en verde.
+
+---
+
+### 11.2 Catálogo de temáticas para tu propia función
+
+Elige **una** de estas (o propón la tuya y consulta con el docente). Cada idea ya incluye **qué función pura puedes extraer** para tu prueba unitaria, lo que suele ser la parte más difícil de identificar.
+
+| # | Función | Endpoint sugerido | Lógica pura para tu test unitario |
+|---|---|---|---|
+| 1 | **Etiquetas (tags)** | `POST /api/tareas/:id/tags` | `parsearEtiquetas("trabajo, Urgente, casa")` → `["trabajo","urgente","casa"]` sin duplicados |
+| 2 | **Fecha límite (deadline)** | `PUT /api/tareas/:id/deadline` | `esFechaValida("2026-12-31")` y `diasRestantes(deadline, hoy)` |
+| 3 | **Búsqueda por texto** | `GET /api/tareas?q=texto` | `coincideBusqueda(titulo, query)` (case-insensitive, sin acentos) |
+| 4 | **Ordenamiento** | `GET /api/tareas?orden=prioridad` | `ordenarPorPrioridad(tareas)` con orden alta > media > baja |
+| 5 | **Filtros por estado** | `GET /api/tareas?estado=pendientes` | `filtrarPorEstado(tareas, "pendientes")` |
+| 6 | **Paginación** | `GET /api/tareas?page=2&size=5` | `paginar(items, page, size)` con validación de límites |
+| 7 | **Archivar (soft delete)** | `POST /api/tareas/:id/archivar` | `puedeArchivarse(tarea)` (solo si está completada) |
+| 8 | **Asignar responsable** | `PUT /api/tareas/:id/responsable` | `esEmailValido(email)` con regex razonable |
+| 9 | **Contador de revisiones** | (interno en `PUT`) | `incrementarRevision(tarea)` (campo `rev` +1 en cada update) |
+| 10 | **Marcar como favorita** | `POST /api/tareas/:id/favorita` | `togglearFavorita(tarea)` (alterna el flag) |
+| 11 | **Exportar a CSV** | `GET /api/tareas/export` | `tareasACSV(tareas)` con headers y escape de comas |
+| 12 | **Subtareas / progreso** | `POST /api/tareas/:id/subtarea` | `calcularProgreso(subtareas)` (porcentaje completado) |
+
+> Si tu proyecto de portafolio ya tiene una API real, **propón una función real de ese proyecto** en vez de tomar una de esta lista. Vale más una función que vayas a defender.
+
+---
+
+### 11.3 Reglas mínimas del desafío
+
+- La función nueva debe tener al menos **una porción de lógica pura** (sin Express ni BD) — esa es la que prueba el unitario.
+- Cada uno de los 7 archivos de prueba del desafío debe estar separado y prefijado con `desafio.` para distinguirlo de la base.
+- El test de regresión debe contar una **historia de bug real**: introduce el bug a propósito en un commit, verifica que el test cae, arregla, verifica que pasa. Documenta esos commits en la conclusión.
+- La prueba de seguridad debe atacar al menos **un input** que tu función reciba (id, query string, body).
+- La prueba de carga debe incluir tu endpoint nuevo en el `loadtest.js`.
+
+---
+
+### 11.4 Entregable extra del desafío
+
+Agrega a `evidencias/matriz-pruebas.md` una segunda tabla con tu función:
+
+| ID | Tipo | Archivo | Qué valida en mi función | Resultado |
+|---|---|---|---|---|
+| D-01 | Unitaria | `tests/desafio.unit.<nombre>.test.js` | … | PASS / FAIL |
+| D-02 | Humo | `tests/desafio.smoke.<nombre>.test.js` | … | PASS / FAIL |
+| D-03 | Integración | `tests/desafio.integration.<nombre>.test.js` | … | PASS / FAIL |
+| D-04 | E2E | `tests/desafio.e2e.<nombre>.test.js` | … | PASS / FAIL |
+| D-05 | Regresión | `tests/desafio.regression.<nombre>.test.js` | … | PASS / FAIL |
+| D-06 | Seguridad | `tests/desafio.security.<nombre>.test.js` | … | PASS / FAIL |
+| D-07 | Carga | bloque agregado en `loadtest.js` | … | PASS / FAIL |
+
+---
+
+## 12. Desafíos cortos adicionales
+
+Si después del desafío principal todavía sobra tiempo, elige uno de estos:
 
 ### Opción A — Cobertura
 
@@ -1005,7 +1318,7 @@ Crea `.github/workflows/tests.yml` que ejecute `npm test` y `npm audit` en cada 
 
 ---
 
-## 12. Reglas mínimas de la actividad
+## 13. Reglas mínimas de la actividad
 
 - Cada tipo de prueba debe estar en su **propio archivo** (no mezclar unitarias con integración en un mismo file).
 - Cada archivo de tests debe tener un `describe` cuyo nombre indique **claramente el tipo** (`Unitario - …`, `Integración - …`, etc.).
@@ -1015,7 +1328,7 @@ Crea `.github/workflows/tests.yml` que ejecute `npm test` y `npm audit` en cada 
 
 ---
 
-## 13. Errores frecuentes y cómo evitarlos
+## 14. Errores frecuentes y cómo evitarlos
 
 | Síntoma | Causa probable | Solución |
 |---|---|---|
@@ -1027,7 +1340,7 @@ Crea `.github/workflows/tests.yml` que ejecute `npm test` y `npm audit` en cada 
 
 ---
 
-## 14. Cierre de la actividad
+## 15. Cierre de la actividad
 
 Al terminar, además de los entregables, prepárate para responder en defensa:
 
@@ -1040,7 +1353,7 @@ Al terminar, además de los entregables, prepárate para responder en defensa:
 
 ---
 
-## 15. Resumen rápido para estudiantes
+## 16. Resumen rápido para estudiantes
 
 Construye una mini API de tareas con Express, configura Jest + Supertest, y aplica **al menos una prueba de cada uno de estos 7 tipos**: unitaria, humo, integración, E2E/funcional, regresión, seguridad y carga (con k6). Deja evidencia de cada ejecución, completa la matriz consolidada y escribe una reflexión final. Esta actividad complementa el Ejercicio 5 (Plan de Pruebas): allí definiste *qué* probar; aquí lo *ejecutas* en código real.
 
